@@ -1,0 +1,232 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}Purchase Bills | Billing Circle{% endblock %}
+
+{% block dashboard_content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-12 col-md">
+        <h1 class="h3 fw-bold mb-1">Purchase Bills</h1>
+        <p class="text-muted mb-0">Track vendor bills and payments</p>
+    </div>
+    <div class="col-12 col-md-auto mt-3 mt-md-0">
+        <a href="/purchase-bills/add" class="btn btn-primary px-4">
+            <i class="bi bi-plus-lg me-2"></i>Add Bill
+        </a>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <p class="text-muted small mb-1">Total Bills</p>
+                <h3 class="fw-bold mb-0" id="totalBills">0</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <p class="text-muted small mb-1">Unpaid Amount</p>
+                <h3 class="fw-bold mb-0 text-danger" id="unpaidAmount">₹ 0</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <p class="text-muted small mb-1">Overdue Bills</p>
+                <h3 class="fw-bold mb-0 text-warning" id="overdueBills">0</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <p class="text-muted small mb-1">Paid This Month</p>
+                <h3 class="fw-bold mb-0 text-success" id="paidThisMonth">₹ 0</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Table Card -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white">
+        <div class="row g-3 align-items-center">
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control" id="billSearch" placeholder="Search bills...">
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+                <select class="form-select" id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="unpaid">Unpaid</option>
+                    <option value="partial">Partial</option>
+                    <option value="paid">Paid</option>
+                    <option value="overdue">Overdue</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-auto ms-auto">
+                <button class="btn btn-outline-primary" id="refreshTable">
+                    <i class="bi bi-arrow-clockwise me-2"></i>Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Bill Number</th>
+                        <th>Date</th>
+                        <th>Supplier</th>
+                        <th class="text-end">Amount</th>
+                        <th class="text-end">Paid</th>
+                        <th class="text-end">Balance</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="billTableBody">
+                    <!-- Data injected here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const TableBody = document.getElementById('billTableBody');
+
+    function getStatusBadge(status) {
+        const badges = {
+            'unpaid': 'bg-danger-subtle text-danger border border-danger-soft',
+            'partial': 'bg-warning-subtle text-warning border border-warning-soft',
+            'paid': 'bg-success-subtle text-success border border-success-soft',
+            'overdue': 'bg-dark text-white'
+        };
+        return badges[status] || badges['unpaid'];
+    }
+
+    async function loadPurchaseBills(search = '', status = '') {
+        TableBody.innerHTML = '<tr><td colspan="9" class="text-center py-5"><div class="spinner-border text-primary spinner-border-sm"></div></td></tr>';
+        try {
+            const params = new URLSearchParams();
+            if (search) params.append('search', search);
+            if (status) params.append('payment_status', status);
+
+            const resp = await axios.get(`${API_URL}/purchase-bills/?${params.toString()}`);
+            const bills = resp.data;
+
+            // Calculate KPIs
+            let unpaidAmount = 0;
+            let overdueCount = 0;
+            let paidThisMonth = 0;
+            const currentMonth = new Date().getMonth();
+
+            bills.forEach(bill => {
+                if (bill.payment_status !== 'paid') {
+                    unpaidAmount += (bill.balance_amount || 0);
+                }
+                if (bill.payment_status === 'overdue') overdueCount++;
+
+                const billDate = new Date(bill.bill_date);
+                if (bill.payment_status === 'paid' && billDate.getMonth() === currentMonth) {
+                    paidThisMonth += (bill.total_amount || 0);
+                }
+            });
+
+            document.getElementById('totalBills').textContent = bills.length;
+            document.getElementById('unpaidAmount').textContent = `₹ ${unpaidAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+            document.getElementById('overdueBills').textContent = overdueCount;
+            document.getElementById('paidThisMonth').textContent = `₹ ${paidThisMonth.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+
+            if (bills.length === 0) {
+                TableBody.innerHTML = '<tr><td colspan="9" class="text-center py-5 text-muted">No purchase bills found.</td></tr>';
+                return;
+            }
+
+            TableBody.innerHTML = bills.map(bill => `
+                <tr class="align-middle ${bill.payment_status === 'overdue' ? 'table-warning' : ''}">
+                    <td class="ps-4">
+                        <div class="fw-bold text-primary">${bill.bill_number}</div>
+                        ${bill.vendor_bill_number ? `<div class="text-muted smaller">Ref: ${bill.vendor_bill_number}</div>` : ''}
+                    </td>
+                    <td>${new Date(bill.bill_date).toLocaleDateString()}</td>
+                    <td>
+                        <div class="fw-bold">${bill.weaver_name}</div>
+                        <div class="text-muted smaller">${bill.weaver_code}</div>
+                    </td>
+                    <td class="text-end fw-bold">₹ ${parseFloat(bill.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                    <td class="text-end text-success">₹ ${parseFloat(bill.paid_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                    <td class="text-end text-danger fw-bold">₹ ${parseFloat(bill.balance_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                    <td>${new Date(bill.due_date).toLocaleDateString()}</td>
+                    <td>
+                        <span class="badge ${getStatusBadge(bill.payment_status)} rounded-pill px-3">
+                            ${bill.payment_status.toUpperCase()}
+                        </span>
+                    </td>
+                    <td class="text-end pe-4">
+                        <div class="btn-group shadow-sm">
+                            <a href="/purchase-bills/view/${bill.bill_id}" class="btn btn-white btn-sm border" title="View">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="/purchase-bills/edit/${bill.bill_id}" class="btn btn-white btn-sm border" title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                             ${bill.payment_status !== 'paid' ? `
+                            <a href="/vendor-payments/add-for-bill/${bill.bill_id}" class="btn btn-white btn-sm border text-success" title="Record Payment">
+                                <i class="bi bi-cash-coin"></i>
+                            </a>
+                            ` : ''}
+                            <button class="btn btn-white btn-sm border text-danger" onclick="deleteBill('${bill.bill_id}', '${bill.bill_number}')" title="Delete Bill">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        } catch (e) {
+            console.error(e);
+            TableBody.innerHTML = '<tr><td colspan="9" class="text-center py-5 text-danger">Failed to load purchase bills.</td></tr>';
+        }
+    }
+
+    async function deleteBill(billId, billNumber) {
+        window.ui.confirmDelete({
+            title: 'Delete Purchase Bill',
+            message: `Are you sure you want to delete Bill ${billNumber}? This will revert the weaver balance.`,
+            onConfirm: async () => {
+                await axios.delete(`${API_URL}/purchase-bills/${billId}`);
+                window.ui.showToast('Purchase bill deleted successfully', 'success');
+                loadPurchaseBills();
+            }
+        });
+    }
+
+    // Search and filter
+    let searchTimeout;
+    document.getElementById('billSearch').addEventListener('input', (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            loadPurchaseBills(e.target.value, document.getElementById('statusFilter').value);
+        }, 400);
+    });
+
+    document.getElementById('statusFilter').addEventListener('change', (e) => {
+        loadPurchaseBills(document.getElementById('billSearch').value, e.target.value);
+    });
+
+    document.getElementById('refreshTable').addEventListener('click', () => loadPurchaseBills());
+
+    document.addEventListener('DOMContentLoaded', () => loadPurchaseBills());
+</script>
+{% endblock %}

@@ -1,0 +1,621 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}Dashboard | Billing Circle — Command Center{% endblock %}
+
+{% block dashboard_content %}
+<!-- Dashboard Header with Controls -->
+<div class="row mb-4 align-items-center">
+    <div class="col-12 col-md-6">
+        <h1 class="h3 fw-bold mb-1 text-primary">Dashboard Overview</h1>
+        <p class="text-muted mb-0">Welcome back, <span id="userNameWelcome" class="fw-bold">Admin</span>. Here's what's
+            happening today.</p>
+    </div>
+    <div class="col-12 col-md-6 mt-3 mt-md-0">
+        <div class="d-flex gap-2 justify-content-md-end flex-wrap">
+            <!-- Company Switcher -->
+            <div class="dropdown">
+                <button class="btn btn-white border px-3 dropdown-toggle" type="button" id="companySwitcher"
+                    data-bs-toggle="dropdown">
+                    <i class="bi bi-building me-2"></i><span id="currentCompanyName">My Company</span>
+                </button>
+                <ul class="dropdown-menu shadow border-0">
+                    <li>
+                        <h6 class="dropdown-header">Organization</h6>
+                    </li>
+                    <li><span class="dropdown-item-text small text-muted" id="companyInfo">Loading...</span></li>
+                </ul>
+            </div>
+
+            <!-- Date Range Picker -->
+            <div class="dropdown">
+                <button class="btn btn-white border px-3 dropdown-toggle" type="button" id="dateRangePicker"
+                    data-bs-toggle="dropdown">
+                    <i class="bi bi-calendar3 me-2"></i><span id="selectedDateRange">Last 7 Days</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                    <li><a class="dropdown-item" href="#" onclick="setDateRange(7, 'Last 7 Days')">Last 7 Days</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="setDateRange(30, 'Last 30 Days')">Last 30 Days</a>
+                    </li>
+                    <li><a class="dropdown-item" href="#" onclick="setDateRange(90, 'Last 90 Days')">Last 90 Days</a>
+                    </li>
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
+                    <li><a class="dropdown-item" href="#" onclick="setDateRange(365, 'This Year')">This Year</a></li>
+                </ul>
+            </div>
+
+            <!-- Refresh Button -->
+            <button class="btn btn-primary px-3" id="refreshDashboard">
+                <i class="bi bi-arrow-clockwise me-2"></i>Refresh
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- KPI Cards Section -->
+<div class="row g-3 g-md-4 mb-4">
+    <!-- Total Sales KPI -->
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="card kpi-card border-0 shadow-sm h-100"
+            style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-left: 4px solid #8b5cf6 !important;">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="label text-muted small fw-bold text-uppercase mb-1">Total Sales</div>
+                    <div class="value h3 fw-bold mb-0" id="kpi-total-sales" style="color: #8b5cf6;">₹ 0.00</div>
+                    <div class="mt-2 smaller" id="sales-trend">
+                        <i class="bi bi-arrow-up text-success me-1"></i><span class="text-success fw-bold">0%</span>
+                    </div>
+                </div>
+                <div class="icon-box rounded-3 p-2" style="background-color: #ede9fe;">
+                    <i class="bi bi-graph-up-arrow fs-4" style="color: #8b5cf6;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Outstanding KPI -->
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="card kpi-card border-0 shadow-sm h-100"
+            style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-left: 4px solid #f59e0b !important;">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="label text-muted small fw-bold text-uppercase mb-1">Outstanding</div>
+                    <div class="value h3 fw-bold mb-0" id="kpi-receivables" style="color: #f59e0b;">₹ 0.00</div>
+                    <div class="mt-2 smaller text-muted">
+                        <i class="bi bi-info-circle me-1"></i>From customers
+                    </div>
+                </div>
+                <div class="icon-box rounded-3 p-2" style="background-color: #fef3c7;">
+                    <i class="bi bi-arrow-down-left-circle fs-4" style="color: #f59e0b;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quotes KPI -->
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="card kpi-card border-0 shadow-sm h-100"
+            style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-left: 4px solid #3b82f6 !important;">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="label text-muted small fw-bold text-uppercase mb-1">Quotes</div>
+                    <div class="value h3 fw-bold mb-0 text-primary" id="kpi-quotes-pending">0</div>
+                    <div class="mt-2 smaller text-muted">
+                        <span id="kpi-quotes-converted">0</span> Converted
+                    </div>
+                </div>
+                <div class="icon-box bg-primary-subtle rounded-3 p-2">
+                    <i class="bi bi-file-earmark-text text-primary fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Low Stock KPI -->
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="card kpi-card border-0 shadow-sm h-100"
+            style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-left: 4px solid #ef4444 !important;">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="label text-muted small fw-bold text-uppercase mb-1">Low Stock</div>
+                    <div class="value h3 fw-bold mb-0 text-danger" id="kpi-low-stock">0</div>
+                    <div class="mt-2 smaller text-muted">
+                        Items below reorder
+                    </div>
+                </div>
+                <div class="icon-box bg-danger-subtle rounded-3 p-2">
+                    <i class="bi bi-exclamation-triangle text-danger fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Grid -->
+<div class="row g-3 g-md-4 mb-4">
+    <!-- Revenue Chart -->
+    <div class="col-12 col-lg-8">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold">Revenue Chart (Monthly)</h5>
+                <span class="badge bg-primary-subtle text-primary">Live Data</span>
+            </div>
+            <div class="card-body">
+                <canvas id="revenueChart" height="280"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Selling Items -->
+    <div class="col-12 col-lg-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0 fw-bold">Top Selling Items</h5>
+            </div>
+            <div class="card-body p-0">
+                <div id="topSellingItems" class="p-3">
+                    <div class="text-center py-5 text-muted small">
+                        <div class="spinner-border spinner-border-sm text-primary mb-2"></div><br>
+                        Loading top items...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Second Row Grid -->
+<div class="row g-3 g-md-4 mb-4">
+    <!-- Recent Invoices -->
+    <div class="col-12 col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold">Recent Invoices</h5>
+                <a href="/invoices" class="btn btn-sm btn-link text-decoration-none">View All <i
+                        class="bi bi-arrow-right ms-1"></i></a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="recentInvoicesTable">
+                        <thead>
+                            <tr>
+                                <th>Invoice #</th>
+                                <th>Customer</th>
+                                <th>Amount</th>
+                                <th>Due Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentInvoicesBody">
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">
+                                    <div class="spinner-border spinner-border-sm text-primary mb-2"></div><br>
+                                    Loading invoices...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="col-12 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0 fw-bold">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="/invoices/create" class="btn btn-outline-primary text-start">
+                        <i class="bi bi-plus-circle me-2"></i>New Invoice
+                    </a>
+                    <a href="/quotations/create" class="btn btn-outline-primary text-start">
+                        <i class="bi bi-plus-circle me-2"></i>New Quotation
+                    </a>
+                    <a href="/customers/add" class="btn btn-outline-primary text-start">
+                        <i class="bi bi-plus-circle me-2"></i>Add Customer
+                    </a>
+                    <a href="/items/add" class="btn btn-outline-primary text-start">
+                        <i class="bi bi-plus-circle me-2"></i>Add Item
+                    </a>
+                    <a href="/reports" class="btn btn-outline-primary text-start">
+                        <i class="bi bi-bar-chart me-2"></i>View Reports
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Calendar View Section -->
+<div class="row g-3 g-md-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold">Calendar View - Invoice Due Dates</h5>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary" id="prevMonth"><i class="bi bi-chevron-left"></i></button>
+                    <button class="btn btn-outline-primary" id="currentMonthBtn">Today</button>
+                    <button class="btn btn-outline-primary" id="nextMonth"><i class="bi bi-chevron-right"></i></button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="calendarView">
+                    <div class="text-center mb-3">
+                        <h6 class="fw-bold" id="calendarMonthYear">Loading...</h6>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered text-center" id="calendarTable">
+                            <thead>
+                                <tr>
+                                    <th>Mon</th>
+                                    <th>Tue</th>
+                                    <th>Wed</th>
+                                    <th>Thu</th>
+                                    <th>Fri</th>
+                                    <th>Sat</th>
+                                    <th>Sun</th>
+                                </tr>
+                            </thead>
+                            <tbody id="calendarBody">
+                                <!-- Calendar days will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let revenueChart;
+    let currentDays = 7;
+    let currentMonth = new Date().getMonth() + 1;
+    let currentYear = new Date().getFullYear();
+
+    // Load Organization Info
+    async function loadOrganization() {
+        try {
+            const resp = await axios.get(`${API_URL}/dashboard/organization`);
+            const org = resp.data;
+            document.getElementById('currentCompanyName').textContent = org.company_name;
+            const plan = (org.plan || 'free').toUpperCase();
+            document.getElementById('companyInfo').textContent = `${org.company_name} (${plan} Plan)`;
+        } catch (e) {
+            console.error("Dashboard: Organization fetch failed", e);
+            if (e.response) {
+                console.error("Response data:", e.response.data);
+                console.error("Response status:", e.response.status);
+                console.error("Response headers:", e.response.headers);
+            }
+        }
+    }
+
+    // Set Date Range
+    window.setDateRange = (days, label) => {
+        currentDays = days;
+        document.getElementById('selectedDateRange').textContent = label;
+        loadDashboardData();
+    };
+
+    // Load Dashboard Stats
+    async function loadDashboardData() {
+        try {
+            const resp = await axios.get(`${API_URL}/dashboard/stats`, { params: { days: currentDays } });
+            const stats = resp.data;
+
+            const formatVal = (v) => `₹ ${parseFloat(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+            document.getElementById('kpi-total-sales').textContent = formatVal(stats.total_sales);
+            document.getElementById('kpi-receivables').textContent = formatVal(stats.receivables);
+            document.getElementById('kpi-quotes-pending').textContent = stats.quote_pending || 0;
+            document.getElementById('kpi-quotes-converted').textContent = stats.quote_converted || 0;
+            document.getElementById('kpi-low-stock').textContent = stats.low_stock_count || 0;
+
+            renderChart(stats.days_labels, stats.recent_revenue);
+        } catch (e) {
+            console.error("Dashboard: Stats fetch failed", e);
+            if (e.response) {
+                console.error("Response data:", e.response.data);
+                console.error("Response status:", e.response.status);
+            }
+            window.ui?.showToast('Failed to load dashboard statistics', 'danger');
+        }
+    }
+
+    // Load Top Selling Items
+    async function loadTopSellingItems() {
+        const container = document.getElementById('topSellingItems');
+        try {
+            const resp = await axios.get(`${API_URL}/dashboard/top-selling-items`, { params: { limit: 5 } });
+            const items = resp.data;
+
+            if (items.length === 0) {
+                container.innerHTML = '<div class="text-center py-5 text-muted small">No sales data available</div>';
+                return;
+            }
+
+            const maxRevenue = Math.max(...items.map(i => i.total_revenue));
+
+            container.innerHTML = items.map((item, index) => {
+                const percentage = (item.total_revenue / maxRevenue) * 100;
+                return `
+                    <div class="mb-3 pb-3 ${index < items.length - 1 ? 'border-bottom' : ''}">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <div class="fw-bold small">${index + 1}. ${item.item_name}</div>
+                                <div class="text-muted smaller">Qty: ${item.total_quantity}</div>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold text-success">₹${item.total_revenue.toLocaleString('en-IN')}</div>
+                            </div>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } catch (e) {
+            console.error("Dashboard: Top Selling Items fetch failed", e);
+            if (e.response && e.response.status === 404) {
+                container.innerHTML = '<div class="text-center py-5 text-muted small">No sales data available (404)</div>';
+            } else {
+                container.innerHTML = '<div class="text-center py-5 text-danger small">Failed to load top items</div>';
+            }
+        }
+    }
+
+    // Load Recent Invoices
+    async function loadRecentInvoices() {
+        const tbody = document.getElementById('recentInvoicesBody');
+        try {
+            const resp = await axios.get(`${API_URL}/dashboard/recent-invoices`, { params: { limit: 7 } });
+            const invoices = resp.data;
+
+            if (invoices.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No invoices found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = invoices.map(inv => {
+                const statusBadge = {
+                    'paid': 'bg-success',
+                    'due': 'bg-warning',
+                    'overdue': 'bg-danger'
+                }[inv.status] || 'bg-secondary';
+
+                const dueDate = inv.due_date ? new Date(inv.due_date).toLocaleDateString('en-IN') : 'N/A';
+
+                return `
+                    <tr>
+                        <td><a href="/invoices/view/${inv.invoice_id}" class="text-decoration-none fw-bold">${inv.invoice_number}</a></td>
+                        <td>${inv.customer_name}</td>
+                        <td class="fw-bold">₹${inv.grand_total.toLocaleString('en-IN')}</td>
+                        <td>${dueDate}</td>
+                        <td><span class="badge ${statusBadge}">${inv.status.toUpperCase()}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (e) {
+            console.error("Dashboard: Recent Invoices fetch failed", e);
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-danger">Failed to load invoices</td></tr>';
+        }
+    }
+
+    // Render Revenue Chart
+    function renderChart(labels, data) {
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        if (revenueChart) revenueChart.destroy();
+
+        revenueChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Revenue (₹)',
+                    data: data,
+                    borderColor: '#8b5cf6',
+                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 5,
+                    pointBackgroundColor: '#8b5cf6',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: '#fff',
+                        titleColor: '#1e293b',
+                        bodyColor: '#64748b',
+                        borderColor: '#e2e8f0',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: false,
+                        callbacks: {
+                            label: (ctx) => `Revenue: ₹${ctx.parsed.y.toLocaleString('en-IN')}`
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#f1f5f9' },
+                        border: { display: false },
+                        ticks: {
+                            color: '#94a3b8',
+                            font: { size: 11 },
+                            callback: (value) => '₹' + value.toLocaleString('en-IN')
+                        }
+                    },
+                    x: {
+                        grid: { display: false },
+                        border: { display: false },
+                        ticks: { color: '#94a3b8', font: { size: 11 } }
+                    }
+                }
+            }
+        });
+    }
+
+    // Load Calendar Events
+    async function loadCalendar() {
+        try {
+            const resp = await axios.get(`${API_URL}/dashboard/calendar-events`, {
+                params: { month: currentMonth, year: currentYear }
+            });
+            const events = resp.data;
+
+            // Update month/year display
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'];
+            document.getElementById('calendarMonthYear').textContent = `${monthNames[currentMonth - 1]} ${currentYear}`;
+
+            // Generate calendar
+            const firstDay = new Date(currentYear, currentMonth - 1, 1);
+            const lastDay = new Date(currentYear, currentMonth, 0);
+            const daysInMonth = lastDay.getDate();
+            const startingDayOfWeek = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1; // Monday = 0
+
+            let calendarHTML = '<tr>';
+
+            // Empty cells before first day
+            for (let i = 0; i < startingDayOfWeek; i++) {
+                calendarHTML += '<td class="text-muted bg-light"></td>';
+            }
+
+            // Days of month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateKey = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const hasEvents = events[dateKey] && events[dateKey].length > 0;
+                const eventCount = hasEvents ? events[dateKey].length : 0;
+
+                const cellClass = hasEvents ? 'bg-primary-subtle' : '';
+                const dayOfWeek = (startingDayOfWeek + day - 1) % 7;
+
+                calendarHTML += `
+                    <td class="p-3 ${cellClass}" style="min-height: 80px; vertical-align: top;">
+                        <div class="fw-bold small mb-1">${day}</div>
+                        ${hasEvents ? `<div class="badge bg-primary rounded-pill">🎯 ${eventCount}</div>` : ''}
+                    </td>
+                `;
+
+                if (dayOfWeek === 6) {
+                    calendarHTML += '</tr><tr>';
+                }
+            }
+
+            calendarHTML += '</tr>';
+            document.getElementById('calendarBody').innerHTML = calendarHTML;
+        } catch (e) {
+            console.error("Dashboard: Calendar fetch failed", e);
+        }
+    }
+
+    // Calendar Navigation
+    document.getElementById('prevMonth').addEventListener('click', () => {
+        currentMonth--;
+        if (currentMonth < 1) {
+            currentMonth = 12;
+            currentYear--;
+        }
+        loadCalendar();
+    });
+
+    document.getElementById('nextMonth').addEventListener('click', () => {
+        currentMonth++;
+        if (currentMonth > 12) {
+            currentMonth = 1;
+            currentYear++;
+        }
+        loadCalendar();
+    });
+
+    document.getElementById('currentMonthBtn').addEventListener('click', () => {
+        const now = new Date();
+        currentMonth = now.getMonth() + 1;
+        currentYear = now.getFullYear();
+        loadCalendar();
+    });
+
+    // Refresh Dashboard
+    document.getElementById('refreshDashboard').addEventListener('click', () => {
+        loadDashboardData();
+        loadTopSellingItems();
+        loadRecentInvoices();
+        loadCalendar();
+        window.ui?.showToast('Dashboard refreshed successfully', 'success');
+    });
+
+    // Initialize Dashboard
+    document.addEventListener('DOMContentLoaded', () => {
+        // Set Welcome Name
+        setTimeout(() => {
+            const userNameEl = document.getElementById('userNameNav');
+            if (userNameEl) {
+                const name = userNameEl.textContent.trim();
+                if (name && name !== 'Loading...') {
+                    document.getElementById('userNameWelcome').textContent = name.split(' ')[0];
+                }
+            }
+
+            // Load all dashboard components
+            loadOrganization();
+            loadDashboardData();
+            loadTopSellingItems();
+            loadRecentInvoices();
+            loadCalendar();
+        }, 500);
+    });
+</script>
+
+<style>
+    .kpi-card {
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    #calendarTable td {
+        min-width: 100px;
+        height: 80px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    #calendarTable td:hover {
+        background-color: rgba(59, 130, 246, 0.1) !important;
+    }
+
+    .smaller {
+        font-size: 0.8rem;
+    }
+
+    @media (max-width: 768px) {
+        #calendarTable td {
+            min-width: 50px;
+            height: 60px;
+            font-size: 0.75rem;
+        }
+    }
+</style>
+{% endblock %}

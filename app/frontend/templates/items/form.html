@@ -1,0 +1,338 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}{{ 'Edit' if mode == 'edit' else 'Add' }} Item - Billing Circle{% endblock %}
+
+{% block dashboard_content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="mb-1 fw-bold">{{ 'Edit' if mode == 'edit' else 'New' }} Inventory Item</h4>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0 small">
+                        <li class="breadcrumb-item"><a href="/dashboard"
+                                class="text-decoration-none text-muted">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="/items" class="text-decoration-none text-muted">Item
+                                Master</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">{{ 'Edit' if mode == 'edit' else 'Add' }}
+                        </li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm overflow-hidden">
+            <div class="card-header bg-white border-0 p-0">
+                <ul class="nav nav-tabs nav-fill" id="itemFormTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active py-3 fw-bold border-0 border-bottom border-3"
+                            data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab"><i
+                                class="bi bi-box me-2"></i>General</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link py-3 fw-bold border-0 border-bottom border-3" data-bs-toggle="tab"
+                            data-bs-target="#sales-purchase" type="button" role="tab"><i
+                                class="bi bi-cash-stack me-2"></i>Sales & Purchase</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link py-3 fw-bold border-0 border-bottom border-3" data-bs-toggle="tab"
+                            data-bs-target="#inventory" type="button" role="tab"><i
+                                class="bi bi-diagram-3 me-2"></i>Inventory</button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body p-4">
+                <form id="itemForm">
+                    <div class="tab-content" id="itemFormContent">
+                        <!-- General Tab -->
+                        <div class="tab-pane fade show active" id="general" role="tabpanel">
+                            <h6 class="text-muted text-uppercase small fw-bold mb-4">Identity & Classification</h6>
+                            <div class="row g-3">
+                                <div class="col-md-12 mb-2">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="item_type" id="typeGoods"
+                                            value="goods" checked>
+                                        <label class="form-check-label fw-semibold" for="typeGoods">Goods</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="item_type" id="typeService"
+                                            value="service">
+                                        <label class="form-check-label fw-semibold" for="typeService">Service</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label required small fw-bold">Item Name</label>
+                                    <input type="text" class="form-control" name="item_name" required
+                                        placeholder="Display name">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Brand / Manufacturer</label>
+                                    <input type="text" class="form-control" name="brand" placeholder="e.g. Samsung">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Category</label>
+                                    <select class="form-select" name="category_id" id="categorySelect">
+                                        <option value="">Select Category...</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">HSN Code / SAC</label>
+                                    <input type="text" class="form-control" name="hsn_code" placeholder="8-digit code">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">SKU Code</label>
+                                    <input type="text" class="form-control" name="sku"
+                                        placeholder="Optional identifier">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Unit</label>
+                                    <select class="form-select" name="unit">
+                                        <option value="PCS">Pieces (PCS)</option>
+                                        <option value="BOX">BOX</option>
+                                        <option value="KGS">Kilograms (KGS)</option>
+                                        <option value="MTR">Meters (MTR)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sales & Purchase Tab -->
+                        <div class="tab-pane fade" id="sales-purchase" role="tabpanel">
+                            <h6 class="text-muted text-uppercase small fw-bold mb-4">Pricing Configuration</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Purchase Price (₹)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light">₹</span>
+                                        <input type="number" step="0.01" class="form-control" name="purchase_price"
+                                            value="0.00">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Selling Price (₹)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light">₹</span>
+                                        <input type="number" step="0.01" class="form-control" name="selling_price"
+                                            value="0.00">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Tax Preference</label>
+                                    <select class="form-select" name="tax_preference">
+                                        <option value="taxable">Taxable</option>
+                                        <option value="exempt">Tax Exempt</option>
+                                        <option value="nil">Nil Rated</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Applicable GST Rate (%)</label>
+                                    <div class="input-group">
+                                        <input type="number" step="0.1" class="form-control" name="tax_rate"
+                                            value="18.0">
+                                        <span class="input-group-text bg-light">%</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label small fw-bold">Item Description</label>
+                                    <textarea class="form-control" name="description" rows="3"
+                                        placeholder="Description for invoices..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Inventory Tab -->
+                        <div class="tab-pane fade" id="inventory" role="tabpanel">
+                            <h6 class="text-muted text-uppercase small fw-bold mb-4">Stock Settings</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Opening Stock</label>
+                                    <input type="number" step="0.01" class="form-control" name="opening_stock"
+                                        value="0.00">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Opening Stock Rate (₹/Unit)</label>
+                                    <input type="number" step="0.01" class="form-control" name="opening_stock_rate"
+                                        value="0.00">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Reorder Point</label>
+                                    <input type="number" class="form-control" name="reorder_level" value="10">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Preferred Supplier</label>
+                                    <select class="form-select" name="preferred_supplier_id" id="supplierSelect">
+                                        <option value="">Select Supplier...</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label small fw-bold">Internal Warehouse Notes</label>
+                                    <textarea class="form-control" name="notes" rows="3"
+                                        placeholder="Handling instructions..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 border-top pt-4 mt-4">
+                        <a href="/items" class="btn btn-light border px-4">Discard</a>
+                        <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                            <i class="bi bi-check-lg me-2"></i>{{ 'Update' if mode == 'edit' else 'Save' }} SKU
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const mode = "{{ mode }}";
+    const itemId = "{{ item_id if item_id else '' }}";
+
+    async function loadResources() {
+        try {
+            const [catResp, weaverResp] = await Promise.all([
+                axios.get(`${API_URL}/categories/`),
+                axios.get(`${API_URL}/weavers/`)
+            ]);
+
+            const catSelect = document.getElementById('categorySelect');
+            catResp.data.forEach(c => {
+                const opt = new Option(c.category_name, c.category_id);
+                catSelect.add(opt);
+            });
+
+            const supSelect = document.getElementById('supplierSelect');
+            weaverResp.data.forEach(w => {
+                const opt = new Option(w.weaver_name, w.weaver_id);
+                supSelect.add(opt);
+            });
+
+            if (mode === 'edit' && itemId) {
+                const itemResp = await axios.get(`${API_URL}/items/${itemId}`);
+                const data = itemResp.data;
+                const form = document.getElementById('itemForm');
+
+                Object.keys(data).forEach(key => {
+                    const field = form.elements[key];
+                    if (field) {
+                        if (field.type === 'radio') {
+                            if (field.value === data[key]) field.checked = true;
+                        } else {
+                            field.value = data[key] !== null ? data[key] : '';
+                        }
+                    }
+                });
+            }
+        } catch (e) {
+            console.error(e);
+            window.ui.showToast('Error loading form data.', 'danger');
+        }
+    }
+
+    document.getElementById('itemForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+
+        // Ensure item_name is not empty (required field)
+        if (!data.item_name || data.item_name.trim() === '') {
+            window.ui.showToast('Item name is required', 'warning');
+            return;
+        }
+
+        // Convert empty strings to appropriate defaults for string fields
+        const stringFields = ['sku', 'brand', 'hsn_code', 'description', 'notes'];
+        stringFields.forEach(field => {
+            if (data[field] === undefined || data[field] === null) {
+                data[field] = '';
+            }
+        });
+
+        // Convert empty strings to null for optional reference fields
+        if (!data.category_id || data.category_id === '') data.category_id = null;
+        if (!data.preferred_supplier_id || data.preferred_supplier_id === '') data.preferred_supplier_id = null;
+
+        // Ensure required string fields have defaults
+        if (!data.item_type) data.item_type = 'goods';
+        if (!data.unit) data.unit = 'PCS';
+        if (!data.tax_preference) data.tax_preference = 'taxable';
+        if (!data.status) data.status = 'active';
+
+        // Type casting for numeric fields with proper defaults
+        const numericFields = {
+            'purchase_price': 0.0,
+            'selling_price': 0.0,
+            'tax_rate': 18.0,
+            'opening_stock': 0.0,
+            'opening_stock_rate': 0.0
+        };
+
+        Object.keys(numericFields).forEach(field => {
+            if (data[field] === undefined || data[field] === null || data[field] === '') {
+                data[field] = numericFields[field];
+            } else {
+                data[field] = parseFloat(data[field]) || numericFields[field];
+            }
+        });
+
+        // Handle reorder_level as integer
+        if (data.reorder_level === undefined || data.reorder_level === null || data.reorder_level === '') {
+            data.reorder_level = 10;
+        } else {
+            data.reorder_level = parseInt(data.reorder_level) || 10;
+        }
+
+        console.log('Submitting item data:', data);
+
+        try {
+            if (mode === 'edit') {
+                await axios.put(`${API_URL}/items/${itemId}`, data);
+                window.ui.showToast('Item updated successfully!', 'success');
+            } else {
+                await axios.post(`${API_URL}/items/`, data);
+                window.ui.showToast('Item created successfully!', 'success');
+            }
+            setTimeout(() => window.location.href = '/items', 1000);
+        } catch (error) {
+            console.error('Error submitting item:', error);
+            console.error('Error response:', error.response?.data);
+
+            // Show detailed validation errors if available
+            let msg = 'Operation failed. Check all fields.';
+            if (error.response?.data?.detail) {
+                if (Array.isArray(error.response.data.detail)) {
+                    // Pydantic validation errors
+                    const errors = error.response.data.detail.map(err =>
+                        `${err.loc.join('.')}: ${err.msg}`
+                    ).join(', ');
+                    msg = `Validation errors: ${errors}`;
+                } else {
+                    msg = error.response.data.detail;
+                }
+            }
+            window.ui.showToast(msg, 'danger');
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', loadResources);
+</script>
+
+<style>
+    .required:after {
+        content: " *";
+        color: #ef4444;
+    }
+
+    .nav-tabs .nav-link {
+        color: #64748b;
+        border-radius: 0;
+    }
+
+    .nav-tabs .nav-link.active {
+        color: #10b981;
+        border-color: #10b981;
+        background: #f8fafc;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,257 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}Purchase Orders | Billing Circle{% endblock %}
+
+{% block dashboard_content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-12 col-md">
+        <h1 class="h3 fw-bold mb-1">Purchase Orders</h1>
+        <p class="text-muted mb-0">Manage purchase orders and track deliveries</p>
+    </div>
+    <div class="col-12 col-md-auto mt-3 mt-md-0">
+        <a href="/purchase-orders/add" class="btn btn-primary px-4">
+            <i class="bi bi-plus-lg me-2"></i>Create PO
+        </a>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <p class="text-muted small mb-1">Total POs</p>
+                        <h3 class="fw-bold mb-0" id="totalPOs">0</h3>
+                    </div>
+                    <div class="bg-primary-subtle p-2 rounded">
+                        <i class="bi bi-file-earmark-text text-primary fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <p class="text-muted small mb-1">Pending Confirmation</p>
+                        <h3 class="fw-bold mb-0 text-warning" id="pendingPOs">0</h3>
+                    </div>
+                    <div class="bg-warning-subtle p-2 rounded">
+                        <i class="bi bi-clock-history text-warning fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <p class="text-muted small mb-1">Pending Receipt</p>
+                        <h3 class="fw-bold mb-0 text-info" id="pendingReceipt">0</h3>
+                    </div>
+                    <div class="bg-info-subtle p-2 rounded">
+                        <i class="bi bi-truck text-info fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <p class="text-muted small mb-1">Total PO Value</p>
+                        <h3 class="fw-bold mb-0 text-success" id="totalValue">₹ 0</h3>
+                    </div>
+                    <div class="bg-success-subtle p-2 rounded">
+                        <i class="bi bi-currency-rupee text-success fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Table Card -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white">
+        <div class="row g-3 align-items-center">
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control" id="poSearch" placeholder="Search POs...">
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+                <select class="form-select" id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="draft">Draft</option>
+                    <option value="sent">Sent</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="received">Received</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-auto ms-auto">
+                <div class="btn-group">
+                    <button class="btn btn-outline-primary" id="exportCsv">
+                        <i class="bi bi-file-earmark-spreadsheet me-2"></i>Export
+                    </button>
+                    <button class="btn btn-outline-primary" id="refreshTable">
+                        <i class="bi bi-arrow-clockwise me-2"></i>Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">PO Number</th>
+                        <th>Date</th>
+                        <th>Supplier</th>
+                        <th>Items</th>
+                        <th class="text-end">Total Amount</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="poTableBody">
+                    <!-- Data injected here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const TableBody = document.getElementById('poTableBody');
+
+    function getStatusBadge(status) {
+        const badges = {
+            'draft': 'bg-secondary-subtle text-secondary border border-secondary-soft',
+            'sent': 'bg-info-subtle text-info border border-info-soft',
+            'confirmed': 'bg-primary-subtle text-primary border border-primary-soft',
+            'partially_received': 'bg-warning-subtle text-warning border border-warning-soft',
+            'received': 'bg-success-subtle text-success border border-success-soft',
+            'cancelled': 'bg-danger-subtle text-danger border border-danger-soft'
+        };
+        return badges[status] || badges['draft'];
+    }
+
+    async function loadPurchaseOrders(search = '', status = '') {
+        TableBody.innerHTML = '<tr><td colspan="7" class="text-center py-5"><div class="spinner-border text-primary spinner-border-sm"></div></td></tr>';
+        try {
+            const params = new URLSearchParams();
+            if (search) params.append('search', search);
+            if (status) params.append('status', status);
+
+            const resp = await axios.get(`${API_URL}/purchase-orders/?${params.toString()}`);
+            const pos = resp.data;
+
+            // Calculate KPIs
+            let totalValue = 0;
+            let pendingCount = 0;
+            let pendingReceiptCount = 0;
+
+            pos.forEach(po => {
+                totalValue += (po.total_amount || 0);
+                if (po.status === 'sent' || po.status === 'draft') pendingCount++;
+                if (po.status === 'confirmed' || po.status === 'partially_received') pendingReceiptCount++;
+            });
+
+            document.getElementById('totalPOs').textContent = pos.length;
+            document.getElementById('pendingPOs').textContent = pendingCount;
+            document.getElementById('pendingReceipt').textContent = pendingReceiptCount;
+            document.getElementById('totalValue').textContent = `₹ ${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+
+            if (pos.length === 0) {
+                TableBody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted">No purchase orders found.</td></tr>';
+                return;
+            }
+
+            TableBody.innerHTML = pos.map(po => `
+                <tr class="align-middle">
+                    <td class="ps-4">
+                        <div class="fw-bold text-primary">${po.po_number}</div>
+                    </td>
+                    <td>
+                        <div class="fw-semibold">${new Date(po.po_date).toLocaleDateString()}</div>
+                        ${po.expected_delivery_date ? `<div class="text-muted smaller">Due: ${new Date(po.expected_delivery_date).toLocaleDateString()}</div>` : ''}
+                    </td>
+                    <td>
+                        <div class="fw-bold">${po.weaver_name}</div>
+                        <div class="text-muted smaller">${po.weaver_code}</div>
+                    </td>
+                    <td>${po.items ? po.items.length : 0} items</td>
+                    <td class="text-end fw-bold">₹ ${parseFloat(po.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                    <td>
+                        <span class="badge ${getStatusBadge(po.status)} rounded-pill px-3">
+                            ${po.status.toUpperCase().replace('_', ' ')}
+                        </span>
+                    </td>
+                    <td class="text-end pe-4">
+                        <div class="btn-group shadow-sm">
+                            <a href="/purchase-orders/view/${po.po_id}" class="btn btn-white btn-sm border" title="View">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="/purchase-orders/edit/${po.po_id}" class="btn btn-white btn-sm border" title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            ${po.status !== 'cancelled' ? `
+                            <button class="btn btn-white btn-sm border text-danger" onclick="cancelPO('${po.po_id}', '${po.po_number}')" title="Cancel">
+                                <i class="bi bi-x-circle"></i>
+                            </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        } catch (e) {
+            console.error(e);
+            TableBody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-danger">Failed to load purchase orders.</td></tr>';
+        }
+    }
+
+    async function cancelPO(poId, poNumber) {
+        window.ui.confirmDelete({
+            title: 'Cancel Purchase Order',
+            message: `Are you sure you want to cancel PO ${poNumber}? This will mark the order as cancelled.`,
+            confirmText: 'Cancel PO',
+            onConfirm: async () => {
+                await axios.delete(`${API_URL}/purchase-orders/${poId}`);
+                window.ui.showToast('Purchase order cancelled successfully', 'success');
+                loadPurchaseOrders();
+            }
+        });
+    }
+
+    // Search and filter
+    let searchTimeout;
+    document.getElementById('poSearch').addEventListener('input', (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            loadPurchaseOrders(e.target.value, document.getElementById('statusFilter').value);
+        }, 400);
+    });
+
+    document.getElementById('statusFilter').addEventListener('change', (e) => {
+        loadPurchaseOrders(document.getElementById('poSearch').value, e.target.value);
+    });
+
+    document.getElementById('refreshTable').addEventListener('click', () => loadPurchaseOrders());
+
+    document.addEventListener('DOMContentLoaded', () => loadPurchaseOrders());
+</script>
+{% endblock %}

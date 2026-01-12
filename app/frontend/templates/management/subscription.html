@@ -1,0 +1,216 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}Subscription & Billing | Billing Circle{% endblock %}
+
+{% block dashboard_content %}
+<div class="row mb-5 align-items-center">
+    <div class="col">
+        <h1 class="h3 fw-bold mb-1">Subscription & Membership</h1>
+        <p class="text-muted mb-0">Manage your plan, billing, and system usage.</p>
+    </div>
+</div>
+
+<div id="subscriptionLoader" class="text-center py-5">
+    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
+    <h5 class="text-muted">Syncing your membership data...</h5>
+</div>
+
+<div class="row g-4 d-none" id="subscriptionDashboard">
+    <!-- Current Plan Card -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 h-100 overflow-hidden">
+            <div class="card-body p-4 text-center">
+                <div class="mb-3">
+                    <span class="badge bg-primary px-3 py-2 rounded-pill" id="currentPlanBadge">Loading...</span>
+                </div>
+                <h4 class="fw-bold mb-4" id="currentPlanName">---</h4>
+
+                <div class="d-flex justify-content-center align-items-baseline mb-4">
+                    <span class="h1 fw-bold mb-0" id="currentPlanPrice">₹0</span>
+                    <span class="text-muted ms-2">/ month</span>
+                </div>
+
+                <div class="text-start mb-4">
+                    <div class="usage-item mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="small fw-bold">Invoices</span>
+                            <span class="small text-muted" id="invoiceUsageText">0/0</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div id="invoiceProgressBar" class="progress-bar" role="progressbar"></div>
+                        </div>
+                    </div>
+                    <div class="usage-item mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="small fw-bold">Items</span>
+                            <span class="small text-muted" id="itemUsageText">0/0</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div id="itemProgressBar" class="progress-bar" role="progressbar"></div>
+                        </div>
+                    </div>
+                    <div class="usage-item mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="small fw-bold">Quotations</span>
+                            <span class="small text-muted" id="quotationUsageText">0/0</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div id="quotationProgressBar" class="progress-bar" role="progressbar"></div>
+                        </div>
+                    </div>
+                    <div class="usage-item">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="small fw-bold">Team Members</span>
+                            <span class="small text-muted" id="userUsageText">0/0</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div id="userProgressBar" class="progress-bar" role="progressbar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info border-0 rounded-3 mb-0" id="renewNote">
+                    <small><i class="bi bi-info-circle me-1"></i> Your plan is active and renews automatically.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tier Options -->
+    <div class="col-lg-8">
+        <div class="row g-4" id="plansRow">
+            <!-- Plans will be injected by JS -->
+        </div>
+    </div>
+</div>
+
+<style>
+    .plan-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .plan-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .plan-card.active-plan {
+        border: 2px solid var(--accent) !important;
+    }
+
+    .feature-list {
+        list-style: none;
+        padding-left: 0;
+    }
+
+    .feature-list li {
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .feature-list li i {
+        color: var(--success);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const dashboard = document.getElementById('subscriptionDashboard');
+
+        try {
+            const [statusResp, plansResp] = await Promise.all([
+                axios.get(`${API_URL}/subscriptions/status`),
+                axios.get(`${API_URL}/subscriptions/plans`)
+            ]);
+
+            const status = statusResp.data;
+            const plans = plansResp.data;
+            const currentPlan = status.plan;
+
+            // 1. Fetch Current User for role check
+            const meResp = await axios.get(`${API_URL}/users/me`);
+            const isOwner = meResp.data.role === 'owner';
+
+            // 2. Update Current Status
+            document.getElementById('currentPlanBadge').textContent = status.details.name;
+            document.getElementById('currentPlanName').textContent = status.details.name;
+            document.getElementById('currentPlanPrice').textContent = '₹' + status.details.price;
+
+            // Usage Helpers
+            const updateUsage = (id, current, max) => {
+                const limit = max === -1 ? '∞' : max;
+                document.getElementById(`${id}UsageText`).textContent = `${current}/${limit}`;
+
+                const bar = document.getElementById(`${id}ProgressBar`);
+                if (max === -1) {
+                    bar.style.width = '100%';
+                    bar.className = 'progress-bar bg-success opacity-50';
+                } else {
+                    const pct = Math.min((current / max) * 100, 100);
+                    bar.style.width = pct + '%';
+                    if (pct > 90) bar.className = 'progress-bar bg-danger';
+                    else if (pct > 70) bar.className = 'progress-bar bg-warning';
+                    else bar.className = 'progress-bar bg-primary';
+                }
+            };
+
+            updateUsage('invoice', status.usage.invoices, status.details.limits.invoices);
+            updateUsage('quotation', status.usage.quotations, status.details.limits.quotations);
+            updateUsage('item', status.usage.items, status.details.limits.items);
+            updateUsage('user', status.usage.users, status.details.limits.users);
+
+            // Show dashboard, hide loader
+            dashboard.classList.remove('d-none');
+            document.getElementById('subscriptionLoader').classList.add('d-none');
+
+            // 3. Render Plans
+            const plansRow = document.getElementById('plansRow');
+            plansRow.innerHTML = Object.entries(plans).map(([key, p]) => {
+                const isCurrent = currentPlan === key;
+                const isRecommended = key === 'pro';
+                return `
+                    <div class="col-md-6 col-xl-4">
+                        <div class="card h-100 border-0 shadow-sm plan-card ${isCurrent ? 'active-plan' : ''} ${isRecommended ? 'border-primary' : ''}">
+                            ${isRecommended ? '<div class="position-absolute top-0 start-50 translate-middle"><span class="badge bg-primary rounded-pill">MOST POPULAR</span></div>' : ''}
+                            <div class="card-body p-4 d-flex flex-column">
+                                <div class="mb-3 ${isRecommended ? 'mt-2' : ''}">
+                                    <h5 class="fw-bold mb-1">${p.name}</h5>
+                                    <div class="h3 fw-bold mb-0">₹${p.price}<small class="text-muted fs-6 fw-normal">/mo</small></div>
+                                </div>
+                                <ul class="feature-list small mb-4 flex-grow-1">
+                                    ${p.features.map(f => `<li><i class="bi bi-check-circle-fill"></i> ${f}</li>`).join('')}
+                                </ul>
+                                <button class="btn ${isCurrent ? 'btn-light disabled' : 'btn-primary'} w-100" 
+                                        onclick="upgradePlan('${key}')" 
+                                        ${isCurrent || !isOwner ? 'disabled' : ''}
+                                        title="${!isOwner ? 'Only owners can manage subscriptions' : ''}">
+                                    ${isCurrent ? 'Current Plan' : (p.price === 0 ? 'Switch to Free' : 'Upgrade Now')}
+                                </button>
+                                ${!isOwner && !isCurrent ? '<small class="text-muted text-center mt-2" style="font-size: 0.7rem;">Owner access required</small>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+        } catch (e) {
+            console.error("Subscription load failed", e);
+            window.ui.showToast("Failed to load subscription data", "danger");
+        }
+    });
+
+    async function upgradePlan(plan) {
+        if (!confirm(`Are you sure you want to change your plan?`)) return;
+
+        try {
+            const resp = await axios.post(`${API_URL}/subscriptions/upgrade`, null, { params: { plan } });
+            window.ui.showToast(resp.data.message, "success");
+            setTimeout(() => location.reload(), 1500);
+        } catch (e) {
+            window.ui.showToast(e.response?.data?.detail || "Upgrade failed", "danger");
+        }
+    }
+</script>
+{% endblock %}

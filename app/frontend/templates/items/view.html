@@ -1,0 +1,164 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}Item Details - {{ item_id }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="row mb-4 align-items-center">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 small">
+                <li class="breadcrumb-item"><a href="/items" class="text-decoration-none">Item Master</a></li>
+                <li class="breadcrumb-item active" id="breadcrumbName">SKU</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-0" id="profileHeading">Loading Item...</h1>
+    </div>
+    <div class="col-auto">
+        <div class="btn-group shadow-sm">
+            <a href="/items/edit/{{ item_id }}" class="btn btn-white border px-3">
+                <i class="bi bi-pencil me-2"></i>Edit SKU
+            </a>
+            <button class="btn btn-white border px-3 text-danger">
+                <i class="bi bi-trash me-2"></i>Deactivate
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Stock Snapshot -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm mb-4 bg-primary-subtle border-primary-soft">
+            <div class="card-body p-4 text-center">
+                <h6 class="text-primary text-uppercase small fw-bold mb-3">On-Hand Inventory</h6>
+                <h1 class="fw-bold mb-1" id="currentStock">0.00</h1>
+                <span class="text-muted fw-semibold" id="stockUnit">PCS</span>
+
+                <div class="mt-4 p-3 bg-white rounded-3 border d-flex justify-content-between align-items-center">
+                    <span class="small text-muted">Stock Status</span>
+                    <span class="badge rounded-pill" id="stockStatusBadge">Checking...</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h6 class="text-muted text-uppercase small fw-bold mb-4">Financial Overview</h6>
+                <div class="mb-3">
+                    <label class="text-muted smaller d-block mb-1">Standard Selling Price</label>
+                    <h4 class="fw-bold text-dark mb-0" id="sellPrice">₹ 0.00</h4>
+                </div>
+                <div class="mb-3">
+                    <label class="text-muted smaller d-block mb-1">Last Purchase Cost</label>
+                    <h5 class="fw-semibold text-muted mb-0" id="buyPrice">₹ 0.00</h5>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted small">GST Rate</span>
+                    <span class="fw-bold" id="taxRate">18%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Identity & History -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h6 class="text-muted text-uppercase small fw-bold mb-0">SKU Specifications</h6>
+                    <span class="badge bg-light text-dark border px-3" id="categoryBadge">General</span>
+                </div>
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="text-muted small d-block mb-1">Brand / Make</label>
+                        <span class="fw-bold" id="brandText">-</span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small d-block mb-1">Item Type</label>
+                        <span class="fw-bold text-capitalize" id="typeText">-</span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small d-block mb-1">HSN Code</label>
+                        <span class="fw-bold" id="hsnText">-</span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small d-block mb-1">SKU Unique ID</label>
+                        <span class="fw-bold" id="skuText">-</span>
+                    </div>
+                    <div class="col-12">
+                        <label class="text-muted small d-block mb-1">Involved Supplier</label>
+                        <span class="fw-semibold text-primary" id="supplierText">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="text-muted text-uppercase small fw-bold mb-0">Product Descriptions & Notes</h6>
+            </div>
+            <div class="card-body p-4 pt-0">
+                <div class="mb-4">
+                    <label class="text-muted small d-block mb-2">Display Description</label>
+                    <p class="mb-0 text-dark" id="descText">No description available.</p>
+                </div>
+                <div>
+                    <label class="text-muted small d-block mb-2">Internal Warehouse Notes</label>
+                    <p class="text-muted mb-0 italic" id="notesText">No internal notes.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const itemId = "{{ item_id }}";
+
+    async function loadItem() {
+        try {
+            const [resp, catResp, weaveResp] = await Promise.all([
+                axios.get(`${API_URL}/items/${itemId}`),
+                axios.get(`${API_URL}/categories/`),
+                axios.get(`${API_URL}/weavers/`)
+            ]);
+
+            const i = resp.data;
+            const cats = catResp.data.reduce((acc, c) => ({ ...acc, [c.category_id]: c.category_name }), {});
+            const sups = weaveResp.data.reduce((acc, s) => ({ ...acc, [s.weaver_id]: s.weaver_name }), {});
+
+            // Mapping
+            document.getElementById('profileHeading').textContent = i.item_name;
+            document.getElementById('breadcrumbName').textContent = i.sku || 'SKU';
+            document.getElementById('currentStock').textContent = parseFloat(i.current_stock || 0).toLocaleString();
+            document.getElementById('stockUnit').textContent = i.unit;
+
+            const statusBadge = document.getElementById('stockStatusBadge');
+            if (i.current_stock <= i.reorder_level) {
+                statusBadge.textContent = 'LOW STOCK';
+                statusBadge.className = 'badge rounded-pill bg-danger shadow-sm px-3';
+            } else {
+                statusBadge.textContent = 'HEALTHY';
+                statusBadge.className = 'badge rounded-pill bg-success shadow-sm px-3';
+            }
+
+            document.getElementById('sellPrice').textContent = `₹ ${parseFloat(i.selling_price || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+            document.getElementById('buyPrice').textContent = `₹ ${parseFloat(i.purchase_price || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+            document.getElementById('taxRate').textContent = `${i.tax_rate}% / ${i.tax_preference.toUpperCase()}`;
+
+            document.getElementById('categoryBadge').textContent = cats[i.category_id] || 'General';
+            document.getElementById('brandText').textContent = i.brand || '-';
+            document.getElementById('typeText').textContent = i.item_type;
+            document.getElementById('hsnText').textContent = i.hsn_code || '---';
+            document.getElementById('skuText').textContent = i.sku || '---';
+            document.getElementById('supplierText').textContent = sups[i.preferred_supplier_id] || 'Multiple / Unknown';
+
+            document.getElementById('descText').textContent = i.description || 'No marketing description provided.';
+            document.getElementById('notesText').textContent = i.notes || 'No internal handling notes.';
+
+        } catch (e) { console.error(e); window.ui.showToast('Failed to load item info.', 'danger'); }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadItem);
+</script>
+{% endblock %}

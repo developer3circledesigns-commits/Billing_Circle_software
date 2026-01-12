@@ -1,0 +1,754 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}Category Master | Billing Circle{% endblock %}
+
+{% block dashboard_content %}
+<div class="row g-4 mb-4">
+    <div class="col-6 col-md-4">
+        <div class="card kpi-card border-0 shadow-sm h-100">
+            <div class="icon-box bg-primary-subtle text-primary">
+                <i class="bi bi-tags"></i>
+            </div>
+            <div class="label text-muted small fw-bold">Total Categories</div>
+            <div class="value h2 fw-bold mb-0" id="totalCategories">0</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4">
+        <div class="card kpi-card border-0 shadow-sm h-100">
+            <div class="icon-box bg-success-subtle text-success">
+                <i class="bi bi-check-circle"></i>
+            </div>
+            <div class="label text-muted small fw-bold">Active Groups</div>
+            <div class="value h2 fw-bold mb-0" id="activeCategories">0</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4">
+        <div class="card kpi-card border-0 shadow-sm h-100">
+            <div class="icon-box bg-info-subtle text-info">
+                <i class="bi bi-box-seam"></i>
+            </div>
+            <div class="label text-muted small fw-bold">Stock Coverage</div>
+            <div class="value h2 fw-bold mb-0" id="stockCoverage">100%</div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4 align-items-center">
+    <div class="col-6 col-md">
+        <h1 class="h3 fw-bold mb-1">Category Master</h1>
+        <p class="text-muted mb-0">Organize your inventory with custom business categories.</p>
+    </div>
+    <div class="col-6 col-md-auto mt-3 mt-md-0">
+        <button class="btn btn-white border px-3 me-2" onclick="exportCategoriesCSV()" id="exportBtn">
+            <i class="bi bi-download me-2"></i>Export CSV
+        </button>
+        <button class="btn btn-primary px-4" id="addCategoryBtn">
+            <i class="bi bi-plus-lg me-2"></i>New Category
+        </button>
+    </div>
+</div>
+
+<!-- Search and Filter Bar -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-3">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0">
+                                <i class="bi bi-search text-muted"></i>
+                            </span>
+                            <input type="text" class="form-control border-start-0" id="searchInput"
+                                placeholder="Search categories by name or description...">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-select" id="statusFilter">
+                            <option value="">All Status</option>
+                            <option value="active">Active Only</option>
+                            <option value="inactive">Inactive Only</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-outline-secondary w-100" onclick="loadCategories()">
+                            <i class="bi bi-funnel me-1"></i>Filter
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-12 col-lg-8">
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="categoriesTable">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Category Name</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Items</th>
+                                <th class="text-end pe-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="categoryTableBody">
+                            <tr>
+                                <td colspan="5" class="text-center py-5">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="text-muted mt-2">Loading categories...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div id="noResults" class="d-none text-center py-5">
+                        <i class="bi bi-search display-4 text-muted mb-3"></i>
+                        <h5 class="text-muted">No categories found</h5>
+                        <p class="text-muted mb-0">Try adjusting your search or create a new category.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer border-0 bg-white py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted" id="categoryCount">Showing 0 categories</small>
+                    <nav aria-label="Category pagination" id="paginationNav" class="d-none">
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item disabled"><a class="page-link" href="#" tabindex="-1">Previous</a></li>
+                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                            <li class="page-item"><a class="page-link" href="#">Next</a></li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-4">
+        <div class="card border-0 shadow-sm bg-primary text-white p-4">
+            <h5 class="fw-bold mb-3">Why Use Categories?</h5>
+            <p class="small opacity-75">Grouping items into categories allows for better reporting, faster stock
+                lookups, and specialized tax rules in the future.</p>
+            <ul class="small opacity-75 list-unstyled">
+                <li><i class="bi bi-check-circle-fill me-2"></i> Organize by material type</li>
+                <li><i class="bi bi-check-circle-fill me-2"></i> Group by brand or season</li>
+                <li><i class="bi bi-check-circle-fill me-2"></i> Dynamic filter in Live Stocks</li>
+                <li><i class="bi bi-check-circle-fill me-2"></i> Better inventory analysis</li>
+            </ul>
+        </div>
+
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-body">
+                <h6 class="fw-bold mb-3"><i class="bi bi-info-circle me-2 text-primary"></i>Quick Tips</h6>
+                <div class="alert alert-warning border-warning-subtle bg-warning-subtle mb-3">
+                    <small><i class="bi bi-exclamation-triangle me-2"></i>Cannot delete categories that have items
+                        assigned to them.</small>
+                </div>
+                <div class="alert alert-info border-info-subtle bg-info-subtle mb-0">
+                    <small><i class="bi bi-lightbulb me-2"></i>Use inactive status for seasonal categories you might
+                        need later.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block modals %}
+<!-- Add/Edit Category Modal -->
+<div class="modal fade" id="categoryModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="categoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-0 pt-4 px-4">
+                <h5 class="fw-bold" id="modalTitle">
+                    <i class="bi bi-plus-circle me-2 text-primary"></i>Create New Category
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="categoryForm" novalidate>
+                <input type="hidden" name="category_id" id="editCategoryId" value="">
+                <div class="modal-body px-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">
+                            Category Name <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control" name="category_name" id="catNameInput" required
+                            placeholder="e.g. Silk Sarees, Cotton Materials, Winter Collection" maxlength="100">
+                        <div class="invalid-feedback" id="nameError">Please enter a valid category name (3-100
+                            characters)</div>
+                        <div class="form-text">This name will be used throughout the system</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Description</label>
+                        <textarea class="form-control" name="description" id="catDescInput" rows="3"
+                            placeholder="Short summary of items in this category. Max 500 characters."
+                            maxlength="500"></textarea>
+                        <div class="form-text">
+                            <span id="charCount">0</span>/500 characters
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Status</label>
+                        <select class="form-select" name="status" id="catStatusInput" required>
+                            <option value="active" selected>Active - Visible and usable</option>
+                            <option value="inactive">Inactive - Hidden from new items</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pb-4 px-4">
+                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4" id="saveBtn">
+                        <span class="spinner-border spinner-border-sm d-none" id="saveSpinner"></span>
+                        <span id="saveBtnText">Save Category</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-0 pt-4 px-4">
+                <h5 class="fw-bold text-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Confirm Deletion
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body px-4">
+                <p id="deleteMessage">Are you sure you want to delete this category?</p>
+                <div class="alert alert-danger border-danger-subtle bg-danger-subtle d-none" id="deleteErrorAlert">
+                    <small id="deleteErrorMessage"></small>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pb-4 px-4">
+                <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger px-4" id="confirmDeleteBtn">
+                    <span class="spinner-border spinner-border-sm d-none" id="deleteSpinner"></span>
+                    <span id="deleteBtnText">Yes, Delete</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+    // Global variables
+    let categoriesData = [];
+    let currentEditId = null;
+    let categoryModal = null;
+    let deleteModal = null;
+
+    // Ensure API_URL is defined
+    if (typeof API_URL === 'undefined') {
+        window.API_URL = '/api';
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialize modals
+        categoryModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('categoryModal'));
+        deleteModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteConfirmModal'));
+
+        // Load categories on page load
+        loadCategories();
+
+        // Add category button event
+        document.getElementById('addCategoryBtn').addEventListener('click', function () {
+            resetForm();
+            document.getElementById('modalTitle').innerHTML =
+                '<i class="bi bi-plus-circle me-2 text-primary"></i>Create New Category';
+            categoryModal.show();
+        });
+
+        // Character counter for description
+        document.getElementById('catDescInput').addEventListener('input', function () {
+            document.getElementById('charCount').textContent = this.value.length;
+        });
+
+        // Form submission
+        document.getElementById('categoryForm').addEventListener('submit', handleFormSubmit);
+
+        // Search input with debounce
+        let searchTimeout;
+        document.getElementById('searchInput').addEventListener('input', function () {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                loadCategories();
+            }, 500);
+        });
+
+        // Status filter change
+        document.getElementById('statusFilter').addEventListener('change', function () {
+            loadCategories();
+        });
+
+        // Delete confirmation
+        document.getElementById('confirmDeleteBtn').addEventListener('click', confirmDelete);
+
+        // Reset form when modal closes
+        document.getElementById('categoryModal').addEventListener('hidden.bs.modal', resetForm);
+
+        // Key shortcuts
+        document.addEventListener('keydown', function (e) {
+            // Ctrl/Cmd + N for new category
+            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                e.preventDefault();
+                document.getElementById('addCategoryBtn').click();
+            }
+        });
+    });
+
+    async function loadCategories() {
+        const tableBody = document.getElementById('categoryTableBody');
+        const noResults = document.getElementById('noResults');
+        const categoryCount = document.getElementById('categoryCount');
+
+        // Show loading
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="text-muted mt-2">Loading categories...</p>
+                </td>
+            </tr>
+        `;
+        noResults.classList.add('d-none');
+
+        try {
+            // Build query parameters
+            const params = new URLSearchParams();
+            const search = document.getElementById('searchInput').value.trim();
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            if (search) params.append('search', search);
+            if (statusFilter) params.append('status_filter', statusFilter);
+
+            const queryString = params.toString() ? `?${params.toString()}` : '';
+
+            const response = await fetch(`${API_URL}/categories/${queryString}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${auth.getToken()}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            categoriesData = await response.json();
+
+            // Update KPIs
+            updateKPIs(categoriesData);
+
+            // Update table
+            if (categoriesData.length === 0) {
+                tableBody.innerHTML = '';
+                noResults.classList.remove('d-none');
+                categoryCount.textContent = 'No categories found';
+            } else {
+                tableBody.innerHTML = categoriesData.map(category => `
+                    <tr class="align-middle" data-category-id="${category.category_id}">
+                        <td class="ps-4">
+                            <div class="fw-bold text-dark">${escapeHtml(category.category_name)}</div>
+                            <div class="smaller text-muted">ID: ${category.category_id.substring(0, 8)}...</div>
+                        </td>
+                        <td class="text-muted small">
+                            ${escapeHtml(category.description || 'No description')}
+                        </td>
+                        <td>
+                            <span class="badge ${category.status === 'active' ?
+                        'bg-success-subtle text-success border border-success-subtle' :
+                        'bg-danger-subtle text-danger border border-danger-subtle'} rounded-pill px-3 py-1">
+                                ${category.status === 'active' ? 'Active' : 'Inactive'}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">
+                                <i class="bi bi-box me-1"></i>
+                                <span id="itemCount-${category.category_id}">0</span>
+                            </span>
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="btn-group btn-group-sm shadow-sm">
+                                <button class="btn btn-outline-primary border" 
+                                        onclick="editCategory('${category.category_id}')" 
+                                        title="Edit Category">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-outline-danger border" 
+                                        onclick="showDeleteModal('${category.category_id}', '${escapeHtml(category.category_name)}')" 
+                                        title="Delete Category">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+
+                categoryCount.textContent = `Showing ${categoriesData.length} categor${categoriesData.length === 1 ? 'y' : 'ies'}`;
+
+                // Load item counts for each category
+                categoriesData.forEach(cat => loadItemCount(cat.category_id));
+            }
+
+        } catch (error) {
+            console.error('Error loading categories:', error);
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center py-5 text-danger">
+                        <i class="bi bi-exclamation-triangle display-6 mb-3"></i>
+                        <p class="mb-0">Failed to load categories</p>
+                        <p class="small">${error.message}</p>
+                        <button class="btn btn-sm btn-primary mt-2" onclick="loadCategories()">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Retry
+                        </button>
+                    </td>
+                </tr>
+            `;
+            categoryCount.textContent = 'Error loading categories';
+            window.ui?.showToast('Error loading categories. Please try again.', 'danger');
+        }
+    }
+
+    async function loadItemCount(categoryId) {
+        try {
+            const response = await fetch(`${API_URL}/items/?category_id=${categoryId}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${auth.getToken()}`
+                }
+            });
+
+            if (response.ok) {
+                const items = await response.json();
+                const countElement = document.getElementById(`itemCount-${categoryId}`);
+                if (countElement) {
+                    countElement.textContent = items.length || 0;
+                }
+            }
+        } catch (error) {
+            console.error(`Error loading item count for category ${categoryId}:`, error);
+        }
+    }
+
+    function updateKPIs(categories) {
+        document.getElementById('totalCategories').textContent = categories.length;
+        const activeCount = categories.filter(c => c.status === 'active').length;
+        document.getElementById('activeCategories').textContent = activeCount;
+
+        // Calculate stock coverage (mock calculation)
+        const coverage = categories.length > 0 ?
+            Math.round((activeCount / categories.length) * 100) : 100;
+        document.getElementById('stockCoverage').textContent = `${coverage}%`;
+    }
+
+    async function editCategory(categoryId) {
+        try {
+            // Show loading state
+            document.getElementById('modalTitle').innerHTML =
+                '<i class="bi bi-hourglass-split me-2 text-primary"></i>Loading...';
+            document.getElementById('saveBtn').disabled = true;
+
+            const response = await fetch(`${API_URL}/categories/${categoryId}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${auth.getToken()}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch category: ${response.status}`);
+            }
+
+            const category = await response.json();
+            currentEditId = categoryId;
+
+            // Update modal
+            document.getElementById('modalTitle').innerHTML =
+                '<i class="bi bi-pencil-square me-2 text-primary"></i>Edit Category';
+            document.getElementById('editCategoryId').value = category.category_id;
+            document.getElementById('catNameInput').value = category.category_name || '';
+            document.getElementById('catDescInput').value = category.description || '';
+            document.getElementById('charCount').textContent = category.description?.length || 0;
+            document.getElementById('catStatusInput').value = category.status || 'active';
+
+            // Show modal
+            categoryModal.show();
+            document.getElementById('saveBtn').disabled = false;
+
+        } catch (error) {
+            console.error('Error loading category:', error);
+            window.ui?.showToast('Failed to load category details.', 'danger');
+            document.getElementById('saveBtn').disabled = false;
+        }
+    }
+
+    async function handleFormSubmit(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        // Get form data
+        const formData = new FormData(event.target);
+        const categoryId = formData.get('category_id');
+        const categoryName = formData.get('category_name');
+        const description = formData.get('description');
+        const status = formData.get('status');
+
+        // Validate
+        if (!categoryName || categoryName.trim().length < 3) {
+            document.getElementById('catNameInput').classList.add('is-invalid');
+            return;
+        }
+
+        // Clear validation
+        document.getElementById('catNameInput').classList.remove('is-invalid');
+
+        // Prepare data
+        const data = {
+            category_name: categoryName.trim(),
+            description: description?.trim() || '',
+            status: status
+        };
+
+        // Show loading
+        const saveBtn = document.getElementById('saveBtn');
+        const saveSpinner = document.getElementById('saveSpinner');
+        const saveBtnText = document.getElementById('saveBtnText');
+
+        saveBtn.disabled = true;
+        saveSpinner.classList.remove('d-none');
+        saveBtnText.textContent = 'Saving...';
+
+        try {
+            let url = `${API_URL}/categories/`;
+            let method = 'POST';
+
+            if (categoryId) {
+                url = `${API_URL}/categories/${categoryId}`;
+                method = 'PUT';
+            }
+
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${auth.getToken()}`
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.detail || result.message || 'Failed to save category');
+            }
+
+            // Success
+            window.ui?.showToast(
+                `Category ${categoryId ? 'updated' : 'created'} successfully!`,
+                'success'
+            );
+
+            // Hide modal and reload data
+            categoryModal.hide();
+            await loadCategories();
+
+        } catch (error) {
+            console.error('Error saving category:', error);
+
+            // Show specific error for duplicate names
+            if (error.message.includes('already exists')) {
+                document.getElementById('catNameInput').classList.add('is-invalid');
+                document.getElementById('nameError').textContent = error.message;
+            }
+
+            window.ui?.showToast(
+                `Error: ${error.message}`,
+                'danger'
+            );
+        } finally {
+            // Reset button state
+            saveBtn.disabled = false;
+            saveSpinner.classList.add('d-none');
+            saveBtnText.textContent = 'Save Category';
+        }
+    }
+
+    function showDeleteModal(categoryId, categoryName) {
+        currentEditId = categoryId;
+        document.getElementById('deleteMessage').textContent =
+            `Are you sure you want to delete "${categoryName}"? This action cannot be undone if items are linked to this category.`;
+        document.getElementById('deleteErrorAlert').classList.add('d-none');
+        const modalEl = document.getElementById('deleteModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+
+    async function confirmDelete() {
+        const deleteBtn = document.getElementById('confirmDeleteBtn');
+        const deleteSpinner = document.getElementById('deleteSpinner');
+        const deleteBtnText = document.getElementById('deleteBtnText');
+        const deleteErrorAlert = document.getElementById('deleteErrorAlert');
+        const deleteErrorMessage = document.getElementById('deleteErrorMessage');
+
+        // Show loading
+        deleteBtn.disabled = true;
+        deleteSpinner.classList.remove('d-none');
+        deleteBtnText.textContent = 'Deleting...';
+        deleteErrorAlert.classList.add('d-none');
+
+        try {
+            const response = await fetch(`${API_URL}/categories/${currentEditId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${auth.getToken()}`
+                }
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.detail || result.message || 'Failed to delete category');
+            }
+
+            window.ui?.showToast('Category deleted successfully', 'success');
+            deleteModal.hide();
+            await loadCategories();
+
+        } catch (error) {
+            console.error('Error deleting category:', error);
+
+            // Show error in modal
+            deleteErrorMessage.textContent = error.message;
+            deleteErrorAlert.classList.remove('d-none');
+
+            // If it's not about items, close modal and show toast
+            if (!error.message.includes('items')) {
+                deleteModal.hide();
+                window.ui?.showToast(`Failed to delete: ${error.message}`, 'danger');
+            }
+        } finally {
+            // Reset button state
+            deleteBtn.disabled = false;
+            deleteSpinner.classList.add('d-none');
+            deleteBtnText.textContent = 'Yes, Delete';
+        }
+    }
+
+    function exportCategoriesCSV() {
+        if (!categoriesData || categoriesData.length === 0) {
+            window.ui?.showToast('No categories data to export', 'warning');
+            return;
+        }
+
+        const exportBtn = document.getElementById('exportBtn');
+        const originalHtml = exportBtn.innerHTML;
+
+        // Show loading on button
+        exportBtn.disabled = true;
+        exportBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Exporting...';
+
+        try {
+            // Create CSV headers
+            const headers = ['Category ID', 'Category Name', 'Description', 'Status', 'Created At', 'Item Count'];
+
+            // Create CSV rows
+            const rows = categoriesData.map(category => [
+                `"${category.category_id}"`,
+                `"${escapeCsv(category.category_name)}"`,
+                `"${escapeCsv(category.description || '')}"`,
+                `"${category.status}"`,
+                `"${new Date(category.created_at).toLocaleDateString()}"`,
+                `"${document.getElementById(`itemCount-${category.category_id}`)?.textContent || '0'}"`
+            ]);
+
+            // Combine headers and rows
+            const csvContent = [
+                headers.join(','),
+                ...rows.map(row => row.join(','))
+            ].join('\n');
+
+            // Create download link
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `categories_export_${new Date().toISOString().slice(0, 10)}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            window.ui?.showToast(`Exported ${categoriesData.length} categories`, 'success');
+
+        } catch (error) {
+            console.error('Error exporting CSV:', error);
+            window.ui?.showToast('Failed to export categories', 'danger');
+        } finally {
+            // Reset button
+            exportBtn.disabled = false;
+            exportBtn.innerHTML = originalHtml;
+        }
+    }
+
+    function resetForm() {
+        const form = document.getElementById('categoryForm');
+        form.reset();
+        form.classList.remove('was-validated');
+        document.getElementById('editCategoryId').value = '';
+        document.getElementById('catNameInput').classList.remove('is-invalid');
+        document.getElementById('catStatusInput').value = 'active';
+        document.getElementById('charCount').textContent = '0';
+
+        // Reset button state
+        const saveBtn = document.getElementById('saveBtn');
+        const saveSpinner = document.getElementById('saveSpinner');
+        const saveBtnText = document.getElementById('saveBtnText');
+
+        saveBtn.disabled = false;
+        saveSpinner.classList.add('d-none');
+        saveBtnText.textContent = 'Save Category';
+
+        currentEditId = null;
+    }
+
+    // Helper functions
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function escapeCsv(text) {
+        if (text === null || text === undefined) return '';
+        return String(text).replace(/"/g, '""').replace(/\n/g, ' ').replace(/\r/g, ' ');
+    }
+
+    // Make functions available globally
+    window.editCategory = editCategory;
+    window.showDeleteModal = showDeleteModal;
+    window.exportCategoriesCSV = exportCategoriesCSV;
+    window.loadCategories = loadCategories;
+</script>
+{% endblock %}

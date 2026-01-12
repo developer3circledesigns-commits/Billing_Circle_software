@@ -1,0 +1,235 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}Weaver Master | Billing Circle{% endblock %}
+
+{% block dashboard_content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-12 col-md">
+        <h1 class="h3 fw-bold mb-1">Weaver</h1>
+        <p class="text-muted mb-0">Manage your weaver details.</p>
+    </div>
+    <div class="col-12 col-md-auto mt-3 mt-md-0">
+        <a href="/weavers/add" class="btn btn-primary px-4">
+            <i class="bi bi-plus-lg me-2"></i>Add Weaver
+        </a>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-4 mb-5">
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card p-4 border-0 shadow-sm bg-gradient-info text-white"
+            style="background: linear-gradient(135deg, #0ea5e9, #2563eb);">
+            <h6 class="text-white-50 small fw-bold text-uppercase mb-2">Total Weavers</h6>
+            <div class="d-flex align-items-center">
+                <h2 class="mb-0 fw-bold me-2" id="totalWeavers">0</h2>
+                <i class="bi bi-person-badge-fill text-white-50 ms-auto fs-3"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card p-4 border-0 shadow-sm">
+            <h6 class="text-muted small fw-bold text-uppercase mb-2">Total Payables</h6>
+            <div class="d-flex align-items-center">
+                <h2 class="mb-0 fw-bold text-danger me-2" id="totalOutstanding">₹ 0.00</h2>
+                <i class="bi bi-wallet2 text-muted ms-auto fs-3"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card p-4 border-0 shadow-sm">
+            <h6 class="text-muted small fw-bold text-uppercase mb-2">Active Partners</h6>
+            <div class="d-flex align-items-center">
+                <h2 class="mb-0 fw-bold text-success me-2" id="activeWeavers">0</h2>
+                <span class="badge bg-success-subtle text-success ms-auto">Active</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Table Card -->
+<div class="card">
+    <div class="card-header">
+        <div class="row g-3 align-items-center">
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control" id="weaverSearch" placeholder="Search weavers...">
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-auto ms-auto">
+                <div class="btn-group">
+                    <button class="btn btn-outline-primary" id="exportCsv"><i
+                            class="bi bi-file-earmark-spreadsheet me-2"></i>CSV</button>
+                    <button class="btn btn-outline-primary" id="refreshTable"><i
+                            class="bi bi-arrow-clockwise me-2"></i>Refresh</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Code</th>
+                        <th>Weaver Name</th>
+                        <th>Contact Number</th>
+                        <th class="text-end">Base Cost</th>
+                        <th class="text-end">Outstanding</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="weaverTableBody">
+                    <!-- Data injected here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const TableBody = document.getElementById('weaverTableBody');
+    const AddForm = document.getElementById('addWeaverForm');
+
+    async function loadWeavers(search = '') {
+        TableBody.innerHTML = '<tr><td colspan="7" class="text-center py-5"><div class="spinner-border text-primary spinner-border-sm"></div></td></tr>';
+        try {
+            const resp = await axios.get(`${API_URL}/weavers/`, { params: { search } });
+            const weavers = resp.data;
+
+            // Calculate KPIs
+            let totalOutstanding = 0;
+            let activeCount = 0;
+            weavers.forEach(w => {
+                totalOutstanding += (w.current_balance || 0);
+                if (w.status === 'active') activeCount++;
+            });
+
+            document.getElementById('totalWeavers').textContent = weavers.length;
+            document.getElementById('totalOutstanding').textContent = `₹ ${totalOutstanding.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+            document.getElementById('activeWeavers').textContent = activeCount;
+
+            if (weavers.length === 0) {
+                TableBody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted">No weaver/supplier records found.</td></tr>';
+                return;
+            }
+
+            TableBody.innerHTML = weavers.map(w => `
+                <tr class="align-middle">
+                    <td class="ps-4 text-accent fw-bold">${w.weaver_code}</td>
+                    <td>
+                        <div class="fw-bold text-dark font-heading">${w.weaver_name}</div>
+                        <div class="text-muted smaller">${w.display_name || ''}</div>
+                    </td>
+                    <td>
+                        <div class="fw-semibold">${w.contact_number}</div>
+                        <div class="text-muted smaller text-uppercase">${w.gstin || 'No GSTIN'}</div>
+                    </td>
+                    <td class="text-end fw-bold">₹ ${parseFloat(w.cost).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                    <td class="text-end fw-bold ${w.current_balance > 0 ? 'text-danger' : 'text-success'}">
+                        ₹ ${parseFloat(w.current_balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </td>
+                    <td class="text-center">
+                        <span class="badge ${w.status === 'active' ? 'bg-success-subtle text-success border border-success-soft' : 'bg-danger-subtle text-danger border border-danger-soft'} rounded-pill px-3">
+                            ${w.status.toUpperCase()}
+                        </span>
+                    </td>
+                    <td class="text-end pe-4">
+                        <div class="btn-group shadow-sm">
+                            <a href="/weavers/view/${w.weaver_id}" class="btn btn-white btn-sm border" title="View Profile">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="/weavers/edit/${w.weaver_id}" class="btn btn-white btn-sm border" title="Edit Info">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <button class="btn btn-white btn-sm border delete-weaver-btn" 
+                                    data-weaver-id="${w.weaver_id}" 
+                                    data-weaver-name="${w.weaver_name.replace(/"/g, '&quot;')}" 
+                                    title="Deactivate Weaver">
+                                <i class="bi bi-trash text-danger"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        } catch (e) {
+            console.error('Error loading weavers:', e);
+            console.error('API URL:', API_URL);
+            console.error('Error details:', e.response?.data || e.message);
+            TableBody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-danger">Failed to sync with supplier database. Check console for details.</td></tr>';
+        }
+    }
+
+    // Event delegation for delete buttons
+    document.addEventListener('click', (e) => {
+        const deleteBtn = e.target.closest('.delete-weaver-btn');
+        if (deleteBtn) {
+            const weaverId = deleteBtn.getAttribute('data-weaver-id');
+            const weaverName = deleteBtn.getAttribute('data-weaver-name');
+            deleteWeaver(weaverId, weaverName);
+        }
+    });
+
+    async function deleteWeaver(id, name) {
+        window.ui.confirmDelete({
+            title: 'Deactivate Weaver',
+            message: `Are you sure you want to deactivate "${name}"? This will mark them as inactive and they will no longer appear in the active list.`,
+            onConfirm: async () => {
+                try {
+                    await axios.delete(`${API_URL}/weavers/${id}`);
+                    window.ui.showToast('Weaver deactivated successfully', 'success');
+                    loadWeavers();
+                } catch (error) {
+                    console.error('Error deactivating weaver:', error);
+                    window.ui.showToast('Failed to deactivate weaver: ' + (error.response?.data?.detail || error.message), 'danger');
+                }
+            }
+        });
+    }
+
+
+    // Search Logic
+    let searchTimeout;
+    document.getElementById('weaverSearch').addEventListener('input', (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => loadWeavers(e.target.value), 400);
+    });
+
+    // Refresh
+    document.getElementById('refreshTable').addEventListener('click', () => loadWeavers());
+
+    // Export CSV
+    document.getElementById('exportCsv').addEventListener('click', () => {
+        const rows = Array.from(document.querySelectorAll('#weaverTableBody tr'));
+        const csv = [
+            ['Code', 'Name', 'Contact', 'Base Cost', 'Outstanding', 'Status'].join(','),
+            ...rows.map(row => {
+                const cols = row.querySelectorAll('td');
+                return [
+                    cols[0].innerText,
+                    cols[1].querySelector('.fw-bold').innerText,
+                    cols[2].querySelector('.fw-semibold').innerText,
+                    cols[3].innerText.replace('₹ ', '').replace(/,/g, ''),
+                    cols[4].innerText.replace('₹ ', '').replace(/,/g, ''),
+                    cols[5].innerText.trim()
+                ].map(v => `"${v}"`).join(',');
+            })
+        ].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.setAttribute('href', url);
+        a.setAttribute('download', 'suppliers_export.csv');
+        a.click();
+    });
+
+    document.addEventListener('DOMContentLoaded', () => loadWeavers());
+</script>
+{% endblock %}

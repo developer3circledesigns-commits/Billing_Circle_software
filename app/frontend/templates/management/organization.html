@@ -1,0 +1,158 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}Organization Profile | Billing Circle{% endblock %}
+
+{% block dashboard_content %}
+<div class="row mb-5 align-items-center">
+    <div class="col">
+        <h1 class="h3 fw-bold mb-1">Organization Profile</h1>
+        <p class="text-muted mb-0">Manage your company details and global settings.</p>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-primary px-4" id="saveOrgBtn">
+            <i class="bi bi-check2-all me-2"></i>Save Changes
+        </button>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <form id="orgForm">
+                    <div class="row g-4">
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Company Branding</label>
+                            <div class="d-flex align-items-center bg-light p-4 rounded-4 border border-dashed">
+                                <div class="icon-box bg-primary text-white me-4"
+                                    style="width: 80px; height: 80px; font-size: 2rem; display: flex; align-items: center; justify-content: center; border-radius: 12px;">
+                                    <i class="bi bi-building"></i>
+                                </div>
+                                <div>
+                                    <button type="button" class="btn btn-white btn-sm border shadow-sm"
+                                        onclick="window.ui.showToast('Logo upload feature coming soon!', 'info')">Upload
+                                        New
+                                        Logo</button>
+                                    <p class="small text-muted mb-0 mt-2">Recommended size: 512x512px. PNG or SVG only.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12 mt-5">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Business
+                                Information</label>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Legal Company Name</label>
+                            <input type="text" class="form-control form-control-lg" id="orgName" name="company_name"
+                                placeholder="Legal Name">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">GSTIN / VAT Number</label>
+                            <input type="text" class="form-control form-control-lg" id="orgGstin" name="gstin"
+                                placeholder="GST Number">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Business Email</label>
+                            <input type="email" class="form-control form-control-lg" id="orgEmail" name="email"
+                                placeholder="contact@org.com">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Support Phone</label>
+                            <input type="text" class="form-control form-control-lg" id="orgPhone" name="phone"
+                                placeholder="+91 00000 00000">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label small fw-bold">Primary Business Address</label>
+                            <textarea class="form-control form-control-lg" id="orgAddress" name="address" rows="3"
+                                placeholder="Enter full address..."></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-3">Subscription Status</h6>
+                <div class="bg-primary-subtle p-3 rounded-3 mb-3 border border-primary-soft">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-primary" id="orgPlanBadge">Loading...</span>
+                        <span class="text-primary fw-bold" id="orgPlanStatus">---</span>
+                    </div>
+                    <p class="small text-muted mb-0" id="orgPlanNote">Fetching your membership details...</p>
+                </div>
+                <a href="/subscription" class="btn btn-outline-primary w-100">Manage Membership</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const saveBtn = document.getElementById('saveOrgBtn');
+    const orgForm = document.getElementById('orgForm');
+
+    async function loadOrgData() {
+        try {
+            const [orgResp, subResp] = await Promise.all([
+                axios.get(`${API_URL}/auth/organization`),
+                axios.get(`${API_URL}/subscriptions/status`)
+            ]);
+
+            const org = orgResp.data;
+            document.getElementById('orgName').value = org.company_name || '';
+            document.getElementById('orgGstin').value = org.gstin || '';
+            document.getElementById('orgEmail').value = org.email || '';
+            document.getElementById('orgPhone').value = org.phone || '';
+            document.getElementById('orgAddress').value = org.address || '';
+
+            // Update Subscription Card
+            try {
+                const sub = subResp.data;
+                document.getElementById('orgPlanBadge').textContent = sub.details.name;
+                document.getElementById('orgPlanStatus').textContent = sub.status.toUpperCase();
+                document.getElementById('orgPlanNote').textContent = `Your ${sub.details.name} plan is ${sub.status}.`;
+            } catch (err) {
+                console.warn("Could not parse subscription status", err);
+                document.getElementById('orgPlanBadge').textContent = "Unknown";
+                document.getElementById('orgPlanNote').textContent = "Unable to load plan details.";
+            }
+
+        } catch (e) {
+            console.error("Failed to load organization data", e);
+        }
+    }
+
+    saveBtn.addEventListener('click', async () => {
+        const formData = new FormData(orgForm);
+        const data = Object.fromEntries(formData.entries());
+
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+
+        try {
+            await axios.put(`${API_URL}/auth/organization`, data);
+
+            // Show success
+            window.ui.showToast('Organization details updated successfully!', 'success');
+
+            // Update sidebar/navbar if name changed
+            const orgNameText = document.getElementById('orgNameText');
+            if (orgNameText) orgNameText.textContent = data.company_name;
+
+        } catch (e) {
+            console.error(e);
+            window.ui.showToast('Failed to update organization: ' + (e.response?.data?.detail || e.message), 'danger');
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="bi bi-check2-all me-2"></i>Save Changes';
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', loadOrgData);
+</script>
+{% endblock %}

@@ -1,0 +1,225 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}Customer Master | Billing Circle{% endblock %}
+
+{% block dashboard_content %}
+<div class="row mb-4 mb-md-5 align-items-center">
+    <div class="col-12 col-md">
+        <h1 class="h3 fw-bold mb-1">Customer Master</h1>
+        <p class="text-muted mb-0">Record and manage your B2B/B2C client base.</p>
+    </div>
+    <div class="col-12 col-md-auto mt-3 mt-md-0">
+        <a href="/customers/add" class="btn btn-primary px-4">
+            <i class="bi bi-person-plus-fill me-2"></i>New Customer
+        </a>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-4 mb-5">
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card p-4 border-0 shadow-sm bg-gradient-primary text-white"
+            style="background: linear-gradient(135deg, #4f46e5, #7c3aed);">
+            <h6 class="text-white-50 small fw-bold text-uppercase mb-2">Total Customers</h6>
+            <div class="d-flex align-items-center">
+                <h2 class="mb-0 fw-bold me-2" id="totalCustomers">0</h2>
+                <i class="bi bi-people-fill text-white-50 ms-auto fs-3"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card p-4 border-0 shadow-sm">
+            <h6 class="text-muted small fw-bold text-uppercase mb-2">Total Receivables</h6>
+            <div class="d-flex align-items-center">
+                <h2 class="mb-0 fw-bold text-primary me-2" id="totalReceivables">₹ 0.00</h2>
+                <i class="bi bi-wallet-fill text-muted ms-auto fs-3"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card p-4 border-0 shadow-sm">
+            <h6 class="text-muted small fw-bold text-uppercase mb-2">Active Accounts</h6>
+            <div class="d-flex align-items-center">
+                <h2 class="mb-0 fw-bold text-success me-2" id="activeCustomers">0</h2>
+                <span class="badge bg-success-subtle text-success ms-auto">Active</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Table Card -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header border-0 bg-transparent py-4">
+        <div class="row g-3 align-items-center">
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-0"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control bg-light border-0" id="customerSearch"
+                        placeholder="Search by name, code or contact...">
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-auto ms-auto">
+                <div class="btn-group shadow-sm">
+                    <button class="btn btn-white border" id="exportCsv"><i
+                            class="bi bi-download me-2"></i>Export</button>
+                    <button class="btn btn-white border" id="refreshTable"><i
+                            class="bi bi-arrow-clockwise me-2"></i>Sync</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">Code</th>
+                        <th>Customer / Business</th>
+                        <th>Type</th>
+                        <th class="text-end">Credit Limit</th>
+                        <th class="text-end">Balance</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="customerTableBody">
+                    <tr>
+                        <td colspan="7" class="text-center py-5">
+                            <div class="spinner-border text-primary spinner-border-sm me-2"></div>
+                            Syncing data...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+
+    const TableBody = document.getElementById('customerTableBody');
+
+    async function loadCustomers(search = '') {
+        try {
+            const resp = await axios.get(`${API_URL}/customers/`, { params: { search } });
+            const customers = resp.data;
+
+            // Calculate KPIs
+            let totalReceivables = 0;
+            let activeCount = 0;
+            customers.forEach(c => {
+                totalReceivables += (c.current_balance || 0);
+                if (c.status === 'active') activeCount++;
+            });
+
+            const totalCustomersEl = document.getElementById('totalCustomers');
+            const totalReceivablesEl = document.getElementById('totalReceivables');
+            const activeCustomersEl = document.getElementById('activeCustomers');
+
+            if (totalCustomersEl) totalCustomersEl.textContent = customers.length;
+            if (totalReceivablesEl) totalReceivablesEl.textContent = `₹ ${totalReceivables.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+            if (activeCustomersEl) activeCustomersEl.textContent = activeCount;
+
+            if (customers.length === 0) {
+                TableBody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted">No customer records found.</td></tr>';
+                return;
+            }
+
+            TableBody.innerHTML = customers.map(c => `
+                <tr class="align-middle">
+                    <td class="ps-4 text-accent fw-bold">${c.customer_code}</td>
+                    <td>
+                        <div class="fw-bold text-dark font-heading">${c.customer_name}</div>
+                        <div class="text-muted smaller">${c.company_name || (c.is_individual ? 'Individual' : '')}</div>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border">${c.is_individual ? 'Individual' : 'Business'}</span>
+                    </td>
+                    <td class="text-end fw-semibold text-muted">₹ ${parseFloat(c.credit_limit || 0).toLocaleString()}</td>
+                    <td class="text-end fw-bold ${c.current_balance > 0 ? 'text-primary' : 'text-success'}">
+                        ₹ ${parseFloat(c.current_balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </td>
+                    <td class="text-center">
+                        <span class="badge ${c.status === 'active' ? 'bg-success-subtle text-success border border-success-soft' : 'bg-danger-subtle text-danger border border-danger-soft'} rounded-pill px-3">
+                            ${c.status.toUpperCase()}
+                        </span>
+                    </td>
+                    <td class="text-end pe-4">
+                        <div class="btn-group shadow-sm">
+                            <a href="/customers/view/${c.customer_id}" class="btn btn-white btn-sm border" title="View Profile">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="/customers/edit/${c.customer_id}" class="btn btn-white btn-sm border" title="Edit Info">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <button class="btn btn-white btn-sm border" onclick="deleteCustomer('${c.customer_id}', '${c.customer_name}')" title="Delete Customer">
+                                <i class="bi bi-trash text-danger"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        } catch (e) {
+            console.error(e);
+            TableBody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-danger">Failed to sync customer data.</td></tr>';
+        }
+    }
+
+    async function deleteCustomer(id, name) {
+        window.ui.confirmDelete({
+            title: 'Delete Customer',
+            message: `Are you sure you want to delete ${name}? This will mark them as inactive.`,
+            onConfirm: async () => {
+                await axios.delete(`${API_URL}/customers/${id}`);
+                window.ui.showToast('Customer deleted successfully', 'success');
+                loadCustomers();
+            }
+        });
+    }
+
+    // Refresh
+    document.getElementById('refreshTable').addEventListener('click', () => loadCustomers());
+
+    // Simple search with debounce
+    let searchTimeout;
+    document.getElementById('customerSearch').addEventListener('input', (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => loadCustomers(e.target.value), 400);
+    });
+
+    // Export to CSV
+    document.getElementById('exportCsv').addEventListener('click', () => {
+        const rows = Array.from(document.querySelectorAll('#customerTableBody tr'));
+        const csvContent = [
+            ['Code', 'Name', 'Company', 'Type', 'Credit Limit', 'Balance', 'Status'].join(','),
+            ...rows.map(row => {
+                const cells = Array.from(row.querySelectorAll('td'));
+                return [
+                    cells[0].innerText,
+                    cells[1].querySelector('.fw-bold').innerText,
+                    cells[1].querySelector('.smaller').innerText,
+                    cells[2].innerText,
+                    cells[3].innerText.replace('₹ ', '').replace(/,/g, ''),
+                    cells[4].innerText.replace('₹ ', '').replace(/,/g, ''),
+                    cells[5].innerText.trim()
+                ].map(v => `"${v}"`).join(',');
+            })
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `customers_export_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+    });
+
+    document.addEventListener('DOMContentLoaded', () => loadCustomers());
+
+</script>
+{% endblock %}

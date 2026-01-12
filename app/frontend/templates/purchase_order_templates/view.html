@@ -1,0 +1,240 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}View Purchase Order | Billing Circle{% endblock %}
+
+{% block dashboard_content %}
+<div class="row mb-4 align-items-center d-print-none">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 small">
+                <li class="breadcrumb-item"><a href="/purchase-orders">Purchase Orders</a></li>
+                <li class="breadcrumb-item active" id="breadcrumbId">View</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-0">Purchase Order Details</h1>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-outline-primary px-4 me-2" onclick="window.print()">
+            <i class="bi bi-printer me-2"></i>Print
+        </button>
+        <div class="btn-group">
+            <button class="btn btn-primary px-4" id="btnConvertToBill">
+                <i class="bi bi-receipt me-2"></i>Convert to Bill
+            </button>
+            <button class="btn btn-white border px-3 dropdown-toggle dropdown-toggle-split"
+                data-bs-toggle="dropdown"></button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="#" id="btnConfirm">Mark Confirmed</a></li>
+                <li><a class="dropdown-item" href="#" id="btnCancel">Cancel Order</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0" id="poDisplay">
+    <div class="card-body p-5">
+        <div class="row mb-5">
+            <div class="col-6">
+                <div class="h3 fw-bold text-primary mb-1 d-orgName">---</div>
+                <div class="small text-muted d-orgAddress">Loading address...</div>
+            </div>
+            <div class="col-6 text-end">
+                <div class="h2 text-uppercase text-muted fw-light mb-1">Purchase Order</div>
+                <div class="fw-bold fs-5" id="pNumber">PO-000</div>
+                <span class="badge rounded-pill px-3 mt-2" id="pStatusBadge">---</span>
+            </div>
+        </div>
+
+        <hr class="my-5 opacity-25">
+
+        <div class="row mb-5">
+            <div class="col-6">
+                <div class="small text-muted text-uppercase fw-bold mb-2">To Vendor:</div>
+                <div class="h5 fw-bold mb-1" id="pWeaver">---</div>
+                <div id="pWeaverCode" class="small text-muted">---</div>
+
+                <div class="mt-4">
+                    <div class="small text-muted text-uppercase fw-bold mb-2">Shipping Address:</div>
+                    <div id="pShipping" class="small text-dark">---</div>
+                </div>
+            </div>
+            <div class="col-6 text-end">
+                <div class="mb-2"><span class="small text-muted me-2">Order Date:</span> <span id="pDate"
+                        class="fw-bold">---</span></div>
+                <div class="mb-2"><span class="small text-muted me-2">Expected Delivery:</span> <span id="pExpected"
+                        class="fw-bold text-primary">---</span></div>
+            </div>
+        </div>
+
+        <div class="table-responsive mb-5">
+            <table class="table table-borderless table-striped align-middle">
+                <thead>
+                    <tr class="border-bottom">
+                        <th class="py-3 ps-4">Item Details</th>
+                        <th class="py-3 text-center">Qty</th>
+                        <th class="py-3 text-end">Rate</th>
+                        <th class="py-3 text-end pe-4">Amount</th>
+                    </tr>
+                </thead>
+                <tbody id="pItems">
+                    <!-- Rows -->
+                    <tr>
+                        <td colspan="4" class="text-center py-4">Loading order items...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="row justify-content-end">
+            <div class="col-md-5">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Sub Total:</span>
+                    <span class="fw-bold" id="pSub">₹ 0.00</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Tax Amount:</span>
+                    <span class="fw-bold" id="pTax">₹ 0.00</span>
+                </div>
+                <hr class="my-3">
+                <div class="d-flex justify-content-between">
+                    <span class="h5 fw-bold mb-0">Total Amount:</span>
+                    <span class="h5 fw-bold mb-0 text-primary" id="pTotal">₹ 0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-5 pt-5 border-top small text-muted">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="fw-bold text-dark mb-1">Notes</div>
+                    <p id="pNotes">---</p>
+                    <div class="fw-bold text-dark mb-1 mt-3">Terms & Conditions</div>
+                    <p id="pTerms">---</p>
+                </div>
+                <div class="col-md-4 text-center border-start">
+                    <div style="height: 60px;"></div>
+                    <div class="small fw-bold text-dark border-top pt-2">Authorized Signatory</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media print {
+        body {
+            background: white !important;
+        }
+
+        #sidebar,
+        .navbar,
+        .d-print-none {
+            display: none !important;
+        }
+
+        #main-content {
+            margin-left: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+        }
+
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        .card-body {
+            padding: 0 !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const poId = "{{ po_id }}";
+
+    async function loadPO() {
+        try {
+            // Org info
+            const orgResp = await axios.get(`${API_URL}/auth/organization`);
+            const org = orgResp.data;
+            document.querySelectorAll('.d-orgName').forEach(el => el.textContent = org.company_name);
+            document.querySelectorAll('.d-orgAddress').forEach(el => el.textContent = org.address || 'Business Center, IN');
+
+            // PO details
+            const resp = await axios.get(`${API_URL}/purchase-orders/${poId}`);
+            const p = resp.data;
+
+            document.getElementById('breadcrumbId').textContent = p.po_number;
+            document.getElementById('pNumber').textContent = p.po_number;
+            document.getElementById('pWeaver').textContent = p.weaver_name;
+            document.getElementById('pWeaverCode').textContent = `Supplier Code: ${p.weaver_code}`;
+            document.getElementById('pShipping').textContent = p.shipping_address || 'As per registered address';
+            document.getElementById('pDate').textContent = new Date(p.po_date).toLocaleDateString();
+            document.getElementById('pExpected').textContent = p.expected_delivery_date ? new Date(p.expected_delivery_date).toLocaleDateString() : 'TBD';
+
+            document.getElementById('pSub').textContent = `₹ ${p.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+            document.getElementById('pTax').textContent = `₹ ${p.tax_amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+            document.getElementById('pTotal').textContent = `₹ ${p.total_amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+            document.getElementById('pNotes').textContent = p.notes || 'No notes.';
+            document.getElementById('pTerms').textContent = p.terms_and_conditions || 'Standard purchase terms apply.';
+
+            const statusBadge = document.getElementById('pStatusBadge');
+            statusBadge.textContent = p.status.toUpperCase();
+
+            const statusMap = {
+                'draft': 'bg-secondary-subtle text-secondary border border-secondary-soft',
+                'sent': 'bg-info-subtle text-info border border-info-soft',
+                'confirmed': 'bg-primary-subtle text-primary border border-primary-soft',
+                'received': 'bg-success-subtle text-success border border-success-soft',
+                'cancelled': 'bg-danger-subtle text-danger border border-danger-soft'
+            };
+            statusBadge.className = `badge rounded-pill px-3 mt-2 ${statusMap[p.status] || 'bg-light text-dark'}`;
+
+            document.getElementById('pItems').innerHTML = p.items.map(i => `
+                <tr class="border-bottom border-light">
+                    <td class="py-3 ps-4">
+                        <div class="fw-bold">${i.item_name}</div>
+                        <div class="smaller text-muted">${i.description || 'No description'}</div>
+                    </td>
+                    <td class="py-3 text-center">${i.qty} ${i.unit}</td>
+                    <td class="py-3 text-end">₹ ${i.rate.toFixed(2)}</td>
+                    <td class="py-3 text-end pe-4 fw-bold">₹ ${i.amount.toFixed(2)}</td>
+                </tr>
+            `).join('');
+
+            // Actions
+            document.getElementById('btnConvertToBill').addEventListener('click', () => {
+                window.location.href = `/purchase-bills/add-from-po/${poId}`;
+            });
+
+            document.getElementById('btnConfirm').addEventListener('click', async () => {
+                if (confirm('Mark this PO as confirmed?')) {
+                    try {
+                        await axios.put(`${API_URL}/purchase-orders/${poId}`, { status: 'confirmed' });
+                        window.ui.showToast('Order confirmed successfully.', 'success');
+                        setTimeout(() => location.reload(), 1000);
+                    } catch (e) { window.ui.showToast('Failed to update.', 'danger'); }
+                }
+            });
+
+            document.getElementById('btnCancel').addEventListener('click', async () => {
+                if (confirm('Cancel this purchase order?')) {
+                    try {
+                        await axios.put(`${API_URL}/purchase-orders/${poId}`, { status: 'cancelled' });
+                        window.ui.showToast('Order cancelled.', 'warning');
+                        setTimeout(() => location.reload(), 1000);
+                    } catch (e) { window.ui.showToast('Failed to update.', 'danger'); }
+                }
+            });
+
+        } catch (e) {
+            console.error(e);
+            window.ui.showToast('Error loading purchase order.', 'danger');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadPO);
+</script>
+{% endblock %}

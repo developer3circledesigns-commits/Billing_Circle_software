@@ -1,0 +1,246 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}New Purchase Bill | Billing Circle{% endblock %}
+
+{% block dashboard_content %}
+<div class="row mb-4 align-items-center">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 small">
+                <li class="breadcrumb-item"><a href="/purchase-bills">Purchase Bills</a></li>
+                <li class="breadcrumb-item active">New</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-0" id="formTitle">Record Purchase Bill</h1>
+    </div>
+</div>
+
+<form id="billForm">
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card p-4">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Select Weaver/Supplier</label>
+                        <select class="form-select" name="weaver_id" id="weaverSelect" required>
+                            <option value="">Loading weavers...</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Vendor Bill No.</label>
+                        <input type="text" class="form-control" name="vendor_bill_number"
+                            placeholder="e.g. INV-2024-001">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Bill Date</label>
+                        <input type="date" class="form-control" name="bill_date" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Due Date</label>
+                        <input type="date" class="form-control" name="due_date" required>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Items Table -->
+        <div class="col-12">
+            <div class="card overflow-hidden">
+                <div class="table-container">
+                    <table class="table align-middle" id="itemsTable">
+                        <thead>
+                            <tr>
+                                <th class="ps-4" style="width: 40%;">Item Details</th>
+                                <th style="width: 15%;">Qty</th>
+                                <th style="width: 15%;">Rate (₹)</th>
+                                <th class="text-end pe-4" style="width: 20%;">Amount (₹)</th>
+                                <th style="width: 10%;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemsBody">
+                            <!-- Rows injected here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="p-3 border-top bg-light">
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="addRow">
+                        <i class="bi bi-plus-lg"></i> Add Item Row
+                    </button>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-lg-7">
+            <div class="card p-4 h-100">
+                <div class="mb-3">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" name="status">
+                        <option value="draft" selected>Draft</option>
+                        <option value="submitted">Submitted</option>
+                        <option value="approved">Approved</option>
+                    </select>
+                </div>
+                <div class="mb-0">
+                    <label class="form-label">Notes</label>
+                    <textarea class="form-control" name="notes" rows="3"
+                        placeholder="Additional instructions or notes..."></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card p-4">
+                <div class="d-flex justify-content-between mb-4">
+                    <span class="h5 fw-bold mb-0">Grand Total</span>
+                    <span class="h4 fw-bold mb-0 text-primary" id="displayGrandTotal">₹ 0.00</span>
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg w-100">
+                    <i class="bi bi-check-circle me-2"></i> Save Purchase Bill
+                </button>
+            </div>
+        </div>
+
+    </div>
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let inventoryItems = [];
+    let rowCount = 0;
+
+    async function initForm() {
+        // Set dates
+        document.querySelector('input[name="bill_date"]').valueAsDate = new Date();
+        document.querySelector('input[name="due_date"]').valueAsDate = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000); // +15 days
+
+        // Load Weavers
+        try {
+            const weaverResp = await axios.get(`${API_URL}/weavers/`);
+            const weavers = weaverResp.data;
+            const select = document.getElementById('weaverSelect');
+            select.innerHTML = '<option value="">Choose a weaver...</option>' +
+                weavers.map(w => `<option value="${w.weaver_id}" data-name="${w.weaver_name}">${w.weaver_name}</option>`).join('');
+        } catch (e) { console.error(e); }
+
+        // Load Items
+        try {
+            const itemsResp = await axios.get(`${API_URL}/items/`);
+            inventoryItems = itemsResp.data;
+        } catch (e) { console.error(e); }
+
+        addRow();
+    }
+
+    function addRow() {
+        rowCount++;
+        const tbody = document.getElementById('itemsBody');
+        const tr = document.createElement('tr');
+        tr.id = `row-${rowCount}`;
+        tr.innerHTML = `
+            <td class="ps-4">
+                <select class="form-select item-select" onchange="onItemSelect(this, ${rowCount})" required>
+                    <option value="">Search item...</option>
+                    ${inventoryItems.map(i => `<option value="${i.item_id}" data-name="${i.item_name}" data-rate="${i.purchase_price || 0}" data-unit="${i.unit}">${i.item_name}</option>`).join('')}
+                </select>
+                <input type="hidden" class="item-id">
+                <input type="hidden" class="item-name">
+                <input type="hidden" class="item-unit">
+            </td>
+            <td><input type="number" class="form-control qty-input" value="1" step="any" oninput="calculateTotals()" required></td>
+            <td><input type="number" class="form-control rate-input" step="0.01" oninput="calculateTotals()" required></td>
+            <td class="text-end pe-4 fw-bold row-total">₹ 0.00</td>
+            <td><button type="button" class="btn btn-link link-danger p-0" onclick="removeRow(${rowCount})"><i class="bi bi-trash"></i></button></td>
+        `;
+        tbody.appendChild(tr);
+    }
+
+    function removeRow(id) {
+        if (document.querySelectorAll('#itemsBody tr').length > 1) {
+            document.getElementById(`row-${id}`).remove();
+            calculateTotals();
+        }
+    }
+
+    function onItemSelect(select, id) {
+        const option = select.options[select.selectedIndex];
+        if (!option.value) return;
+        const row = document.getElementById(`row-${id}`);
+        row.querySelector('.item-id').value = option.value;
+        row.querySelector('.item-name').value = option.dataset.name;
+        row.querySelector('.item-unit').value = option.dataset.unit;
+        // Use purchase price for Bills
+        row.querySelector('.rate-input').value = option.dataset.rate;
+        calculateTotals();
+    }
+
+    function calculateTotals() {
+        let grandTotal = 0;
+        document.querySelectorAll('#itemsBody tr').forEach(tr => {
+            const qty = parseFloat(tr.querySelector('.qty-input').value) || 0;
+            const rate = parseFloat(tr.querySelector('.rate-input').value) || 0;
+            const total = qty * rate;
+            grandTotal += total;
+            tr.querySelector('.row-total').textContent = `₹ ${total.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+        });
+        document.getElementById('displayGrandTotal').textContent = `₹ ${grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+    }
+
+    document.getElementById('addRow').addEventListener('click', addRow);
+
+    document.getElementById('billForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const weaverSelect = document.getElementById('weaverSelect');
+        const selectedWeaver = weaverSelect.options[weaverSelect.selectedIndex];
+
+        let subtotal = 0;
+        const items = [];
+
+        document.querySelectorAll('#itemsBody tr').forEach(tr => {
+            const qty = parseFloat(tr.querySelector('.qty-input').value);
+            const rate = parseFloat(tr.querySelector('.rate-input').value);
+            const amount = qty * rate;
+            subtotal += amount;
+
+            items.push({
+                item_id: tr.querySelector('.item-id').value,
+                item_name: tr.querySelector('.item-name').value,
+                unit: tr.querySelector('.item-unit').value,
+                qty, rate,
+                amount: amount,
+                tax_rate: 0, // Placeholder
+                tax_amount: 0 // Placeholder
+            });
+        });
+
+        // Simple calc - ignoring tax for MVP unless model requires it strictly
+        const payload = {
+            weaver_id: form.weaver_id.value,
+            weaver_name: selectedWeaver.dataset.name,
+            weaver_code: "TMP", // Should be fetched from weaver obj, but let's assume backend handles or we add it to dataset
+            bill_date: new Date(form.bill_date.value).toISOString(),
+            due_date: new Date(form.due_date.value).toISOString(),
+            vendor_bill_number: form.vendor_bill_number.value,
+            items: items,
+            subtotal: subtotal,
+            tax_amount: 0,
+            total_amount: subtotal,
+            status: form.status.value,
+            notes: form.notes.value
+        };
+
+        try {
+            await axios.post(`${API_URL}/purchase-bills/`, payload);
+            window.location.href = '/purchase-bills';
+        } catch (err) {
+            window.ui.showToast('Error creating purchase bill: ' + (err.response?.data?.detail || err.message), 'danger');
+            console.error(err);
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', initForm);
+</script>
+{% endblock %}

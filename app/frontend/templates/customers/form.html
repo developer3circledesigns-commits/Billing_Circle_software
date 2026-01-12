@@ -1,0 +1,423 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}{{ 'Edit' if mode == 'edit' else 'New' }} Customer | Billing Circle{% endblock %}
+
+{% block dashboard_content %}
+<div class="row mb-4 align-items-center">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 small">
+                <li class="breadcrumb-item"><a href="/customers">Customers</a></li>
+                <li class="breadcrumb-item active">{{ 'Edit' if mode == 'edit' else 'New' }} Customer</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-0" id="pageTitle">{{ 'Edit' if mode == 'edit' else 'New' }} Customer</h1>
+    </div>
+</div>
+
+<form id="customerForm">
+    <!-- Top Section: Basic Info -->
+    <div class="card p-4 mb-4">
+        <!-- Customer Type -->
+        <div class="row mb-3">
+            <label class="col-sm-2 col-form-label text-muted">Customer Type</label>
+            <div class="col-sm-10 d-flex align-items-center gap-4">
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="customer_type" id="typeBusiness" value="business"
+                        checked onchange="toggleType()">
+                    <label class="form-check-label" for="typeBusiness">Business</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="customer_type" id="typeIndividual"
+                        value="individual" onchange="toggleType()">
+                    <label class="form-check-label" for="typeIndividual">Individual</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Primary Contact -->
+        <div class="row mb-3">
+            <label class="col-sm-2 col-form-label text-muted">Primary Contact</label>
+            <div class="col-sm-10">
+                <div class="row g-2">
+                    <div class="col-md-2">
+                        <select class="form-select" name="salutation">
+                            <option value="Mr.">Mr.</option>
+                            <option value="Mrs.">Mrs.</option>
+                            <option value="Ms.">Ms.</option>
+                            <option value="Miss.">Miss.</option>
+                            <option value="Dr.">Dr.</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="first_name" placeholder="First Name" required>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="last_name" placeholder="Last Name">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Company Name (Business Only) -->
+        <div class="row mb-3" id="companyNameRow">
+            <label class="col-sm-2 col-form-label text-muted">Company Name</label>
+            <div class="col-sm-6">
+                <input type="text" class="form-control" name="company_name" id="companyNameInput">
+            </div>
+        </div>
+
+        <!-- Customer Display Name -->
+        <div class="row mb-3">
+            <label class="col-sm-2 col-form-label text-muted text-danger">Display Name*</label>
+            <div class="col-sm-6">
+                <select class="form-select" name="customer_name" id="customerNameSelect" required>
+                    <!-- Options populated via JS -->
+                </select>
+            </div>
+        </div>
+
+        <!-- Email -->
+        <div class="row mb-3">
+            <label class="col-sm-2 col-form-label text-muted">Email Address</label>
+            <div class="col-sm-6">
+                <input type="email" class="form-control" name="email">
+            </div>
+        </div>
+
+        <!-- Phone -->
+        <div class="row mb-3">
+            <label class="col-sm-2 col-form-label text-muted">Phone</label>
+            <div class="col-sm-10">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">+91</span>
+                            <input type="text" class="form-control" name="contact_number" placeholder="Work Phone"
+                                required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">+91</span>
+                            <input type="text" class="form-control" name="mobile_number" placeholder="Mobile">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Website -->
+        <div class="row mb-3">
+            <label class="col-sm-2 col-form-label text-muted">Website</label>
+            <div class="col-sm-6">
+                <input type="url" class="form-control" name="website" placeholder="https://">
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs Section -->
+    <div class="card">
+        <div class="card-header border-bottom-0 pb-0">
+            <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-other" type="button">Other
+                        Details</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-address"
+                        type="button">Address</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-remarks"
+                        type="button">Remarks</button>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="tab-content pt-2">
+                <!-- Other Details Tab -->
+                <div class="tab-pane fade show active" id="tab-other">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">PAN (Permanent Account Number)</label>
+                            <input type="text" class="form-control text-uppercase" name="pan_number"
+                                placeholder="ABCDE1234F" maxlength="10">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">GSTIN</label>
+                            <input type="text" class="form-control text-uppercase" name="gstin"
+                                placeholder="22AAAAA0000A1Z5" maxlength="15">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Currency</label>
+                            <select class="form-select" name="currency">
+                                <option value="INR" selected>INR - Indian Rupee</option>
+                                <option value="USD">USD - US Dollar</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Opening Balance</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="number" class="form-control" name="opening_balance" value="0" step="0.01">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Payment Terms</label>
+                            <select class="form-select" name="payment_terms">
+                                <option value="due_on_receipt">Due on Receipt</option>
+                                <option value="net_15">Net 15</option>
+                                <option value="net_30">Net 30</option>
+                                <option value="net_45">Net 45</option>
+                                <option value="net_60">Net 60</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-check mt-3">
+                                <input class="form-check-input" type="checkbox" name="enable_portal" id="enablePortal">
+                                <label class="form-check-label" for="enablePortal">
+                                    Allow portal access for this customer
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Address Tab -->
+                <div class="tab-pane fade" id="tab-address">
+                    <div class="row g-4">
+                        <!-- Billing Address -->
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-3 text-primary">Billing Address</h6>
+                            <div class="mb-2">
+                                <input type="text" class="form-control" name="billing_address_attention"
+                                    placeholder="Attention (Optional)">
+                            </div>
+                            <div class="mb-2">
+                                <textarea class="form-control" name="billing_address" rows="3"
+                                    placeholder="Street Address"></textarea>
+                            </div>
+                            <div class="row g-2 mb-2">
+                                <div class="col-6"><input type="text" class="form-control" name="billing_city"
+                                        placeholder="City"></div>
+                                <div class="col-6"><input type="text" class="form-control" name="billing_state"
+                                        placeholder="State"></div>
+                            </div>
+                            <div class="row g-2 mb-2">
+                                <div class="col-6"><input type="text" class="form-control" name="billing_zip"
+                                        placeholder="Zip Code"></div>
+                                <div class="col-6"><input type="text" class="form-control" name="billing_country"
+                                        placeholder="Country" value="India"></div>
+                            </div>
+                            <input type="text" class="form-control" name="billing_phone" placeholder="Phone (Optional)">
+                        </div>
+
+                        <!-- Shipping Address -->
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold mb-0 text-primary">Shipping Address</h6>
+                                <button type="button" class="btn btn-sm btn-link text-decoration-none"
+                                    onclick="copyAddress()">
+                                    <i class="bi bi-files me-1"></i> Copy Billing Addr
+                                </button>
+                            </div>
+                            <div class="mb-2">
+                                <input type="text" class="form-control" name="shipping_address_attention"
+                                    placeholder="Attention (Optional)">
+                            </div>
+                            <div class="mb-2">
+                                <textarea class="form-control" name="shipping_address" rows="3"
+                                    placeholder="Street Address"></textarea>
+                            </div>
+                            <div class="row g-2 mb-2">
+                                <div class="col-6"><input type="text" class="form-control" name="shipping_city"
+                                        placeholder="City"></div>
+                                <div class="col-6"><input type="text" class="form-control" name="shipping_state"
+                                        placeholder="State"></div>
+                            </div>
+                            <div class="row g-2 mb-2">
+                                <div class="col-6"><input type="text" class="form-control" name="shipping_zip"
+                                        placeholder="Zip Code"></div>
+                                <div class="col-6"><input type="text" class="form-control" name="shipping_country"
+                                        placeholder="Country" value="India"></div>
+                            </div>
+                            <input type="text" class="form-control" name="shipping_phone"
+                                placeholder="Phone (Optional)">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Remarks Tab -->
+                <div class="tab-pane fade" id="tab-remarks">
+                    <div class="mb-3">
+                        <label class="form-label">Remarks (Internal Use)</label>
+                        <textarea class="form-control" name="notes" rows="5"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sticky Bottom Bar -->
+    <div class="position-fixed bottom-0 start-0 w-100 bg-white border-top p-3 shadow-lg"
+        style="z-index: 1000; padding-left: 280px !important;">
+        <div class="container-fluid d-flex gap-2">
+            <button type="submit" class="btn btn-primary px-4">Save Customer</button>
+            <a href="/customers" class="btn btn-light border px-4">Cancel</a>
+        </div>
+    </div>
+    <!-- Spacing for bottom bar -->
+    <div style="height: 80px;"></div>
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const mode = "{{ mode }}";
+    const customerId = "{{ customer_id if customer_id else '' }}";
+
+    // Toggle Company Name and update Display Name options
+    function toggleType() {
+        const isBusiness = document.getElementById('typeBusiness').checked;
+        const companyRow = document.getElementById('companyNameRow');
+        companyRow.style.display = isBusiness ? 'flex' : 'none';
+        updateDisplayNameOptions();
+    }
+
+    function updateDisplayNameOptions() {
+        const fname = document.querySelector('[name="first_name"]').value;
+        const lname = document.querySelector('[name="last_name"]').value;
+        const company = document.querySelector('[name="company_name"]').value;
+        const select = document.getElementById('customerNameSelect');
+        const currentVal = select.value;
+
+        select.innerHTML = '';
+        const options = [];
+
+        if (company) options.push(company);
+        if (fname && lname) options.push(`${fname} ${lname}`);
+        if (fname) options.push(fname);
+
+        if (options.length === 0) {
+            select.innerHTML = '<option value="">Select or type to add</option>';
+        } else {
+            options.forEach(opt => {
+                const el = document.createElement('option');
+                el.value = opt;
+                el.textContent = opt;
+                select.appendChild(el);
+            });
+        }
+
+        // Try to preserve value if exists in new options
+        if (currentVal && options.includes(currentVal)) {
+            select.value = currentVal;
+        }
+    }
+
+    // Event listeners for display name updates
+    document.querySelector('[name="first_name"]').addEventListener('input', updateDisplayNameOptions);
+    document.querySelector('[name="last_name"]').addEventListener('input', updateDisplayNameOptions);
+    document.querySelector('[name="company_name"]').addEventListener('input', updateDisplayNameOptions);
+
+
+    function copyAddress() {
+        document.querySelector('[name="shipping_address_attention"]').value = document.querySelector('[name="billing_address_attention"]').value;
+        document.querySelector('[name="shipping_address"]').value = document.querySelector('[name="billing_address"]').value;
+        document.querySelector('[name="shipping_city"]').value = document.querySelector('[name="billing_city"]').value;
+        document.querySelector('[name="shipping_state"]').value = document.querySelector('[name="billing_state"]').value;
+        document.querySelector('[name="shipping_zip"]').value = document.querySelector('[name="billing_zip"]').value;
+        document.querySelector('[name="shipping_country"]').value = document.querySelector('[name="billing_country"]').value;
+        document.querySelector('[name="shipping_phone"]').value = document.querySelector('[name="billing_phone"]').value;
+        ui.showToast('Billing address copied to Shipping address', 'success');
+    }
+
+    async function init() {
+        if (mode === 'edit' && customerId) {
+            try {
+                const resp = await axios.get(`${API_URL}/customers/${customerId}`);
+                const data = resp.data;
+
+                // Basic
+                if (data.customer_type) {
+                    document.querySelector(`input[name="customer_type"][value="${data.customer_type}"]`).checked = true;
+                }
+                toggleType();
+
+                document.querySelector('[name="salutation"]').value = data.salutation || 'Mr.';
+                document.querySelector('[name="first_name"]').value = data.first_name || '';
+                document.querySelector('[name="last_name"]').value = data.last_name || '';
+                document.querySelector('[name="company_name"]').value = data.company_name || '';
+                updateDisplayNameOptions();
+                document.querySelector('[name="customer_name"]').value = data.customer_name || ''; /* map display name */
+
+                document.querySelector('[name="email"]').value = data.email || '';
+                document.querySelector('[name="contact_number"]').value = data.contact_number || '';
+                document.querySelector('[name="mobile_number"]').value = data.mobile_number || '';
+                document.querySelector('[name="website"]').value = data.website || '';
+
+                // Tabs - Other
+                document.querySelector('[name="pan_number"]').value = data.pan_number || '';
+                document.querySelector('[name="gstin"]').value = data.gstin || '';
+                document.querySelector('[name="currency"]').value = data.currency || 'INR';
+                document.querySelector('[name="opening_balance"]').value = data.opening_balance || 0;
+                document.querySelector('[name="payment_terms"]').value = data.payment_terms || 'due_on_receipt';
+                document.querySelector('[name="enable_portal"]').checked = data.enable_portal || false;
+
+                // Tabs - Address
+                document.querySelector('[name="billing_address_attention"]').value = data.billing_address_attention || '';
+                document.querySelector('[name="billing_address"]').value = data.billing_address || '';
+                document.querySelector('[name="billing_city"]').value = data.billing_city || '';
+                document.querySelector('[name="billing_state"]').value = data.billing_state || '';
+                document.querySelector('[name="billing_zip"]').value = data.billing_zip || '';
+                document.querySelector('[name="billing_country"]').value = data.billing_country || '';
+                document.querySelector('[name="billing_phone"]').value = data.billing_phone || '';
+
+                document.querySelector('[name="shipping_address_attention"]').value = data.shipping_address_attention || '';
+                document.querySelector('[name="shipping_address"]').value = data.shipping_address || '';
+                document.querySelector('[name="shipping_city"]').value = data.shipping_city || '';
+                document.querySelector('[name="shipping_state"]').value = data.shipping_state || '';
+                document.querySelector('[name="shipping_zip"]').value = data.shipping_zip || '';
+                document.querySelector('[name="shipping_country"]').value = data.shipping_country || '';
+                document.querySelector('[name="shipping_phone"]').value = data.shipping_phone || '';
+
+                // Tabs - Remarks
+                document.querySelector('[name="notes"]').value = data.notes || '';
+
+            } catch (e) {
+                console.error(e);
+                ui.showToast('Failed to load customer data', 'danger');
+            }
+        }
+    }
+
+    document.getElementById('customerForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+
+        // Handle Checkbox
+        data.enable_portal = document.getElementById('enablePortal').checked;
+        // Handle Customer Name (Display Name)
+        data.display_name = data.customer_name; // Sync display name
+
+        try {
+            if (mode === 'add') {
+                await axios.post(`${API_URL}/customers/`, data);
+                ui.showToast('Customer created successfully', 'success');
+            } else {
+                await axios.put(`${API_URL}/customers/${customerId}`, data);
+                ui.showToast('Customer updated successfully', 'success');
+            }
+            setTimeout(() => window.location.href = '/customers', 1000);
+        } catch (err) {
+            console.error(err);
+            ui.showToast('Error saving customer', 'danger');
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', init);
+</script>
+{% endblock %}

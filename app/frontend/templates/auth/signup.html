@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up - Billing Circle{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="card auth-card">
+        <div class="auth-logo" id="authLogo">
+            Billing Circle
+        </div>
+        <h4 class="mb-4 text-center">Create Account</h4>
+        <form id="signupForm">
+            <div class="mb-3">
+                <label class="form-label" for="full_name">Full Name</label>
+                <input type="text" class="form-control" name="full_name" required placeholder="Enter Full Name">
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="organization_name">Organization Name</label>
+                <input type="text" class="form-control" name="organization_name" required
+                    placeholder="Enter Organization Name">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Email Address</label>
+                <input type="email" class="form-control" name="email" required placeholder="Enter Email Address">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-control" name="password" required>
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">Sign Up</button>
+            </div>
+        </form>
+        <div class="mt-3 text-center">
+            <p class="text-muted">Already have an account? <a href="/">Login</a></p>
+        </div>
+        <div id="errorAlert" class="alert alert-danger mt-3 d-none"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // Convert FormData to JSON (FastAPI expects JSON for this endpoint)
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+
+        const errorAlert = document.getElementById('errorAlert');
+
+        try {
+            const response = await axios.post(`${API_URL}/auth/signup`, data);
+            auth.setToken(response.data.access_token);
+            window.location.href = '/dashboard';
+        } catch (error) {
+            errorAlert.textContent = error.response?.data?.detail || 'Signup failed';
+            errorAlert.classList.remove('d-none');
+        }
+    });
+</script>
+{% endblock %}

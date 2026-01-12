@@ -1,0 +1,117 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}Reports & Insights | Billing Circle{% endblock %}
+
+{% block dashboard_content %}
+<div class="row mb-5 align-items-center">
+    <div class="col">
+        <h1 class="h3 fw-bold mb-1">Reports & Insights</h1>
+        <p class="text-muted mb-0">Comprehensive business intelligence and audits.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card h-100 hover-shadow transition">
+            <div class="card-body p-4">
+                <div class="icon-box bg-success-subtle text-success mb-3"
+                    style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 10px;">
+                    <i class="bi bi-graph-up-arrow fs-4"></i>
+                </div>
+                <h5 class="fw-bold">Sales & Revenue</h5>
+                <p class="text-muted small">Analyze your top-performing items, regional sales, and seasonal trends.</p>
+                <button class="btn btn-link p-0 fw-bold text-decoration-none mt-3"
+                    onclick="downloadDashboardReport()">View Report <i class="bi bi-arrow-right ms-1"></i></button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 hover-shadow transition">
+            <div class="card-body p-4">
+                <div class="icon-box bg-warning-subtle text-warning mb-3"
+                    style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 10px;">
+                    <i class="bi bi-safe fs-4"></i>
+                </div>
+                <h5 class="fw-bold">Tax & GST Audits</h5>
+                <p class="text-muted small">Generate GSTR reports, tax summaries, and reconciliation sheets.</p>
+                <button class="btn btn-link p-0 fw-bold text-decoration-none mt-3"
+                    onclick="window.ui.showToast('Tax reports feature coming soon!', 'info')">View Report <i
+                        class="bi bi-arrow-right ms-1"></i></button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 hover-shadow transition">
+            <div class="card-body p-4">
+                <div class="icon-box bg-danger-subtle text-danger mb-3"
+                    style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 10px;">
+                    <i class="bi bi-box-seam fs-4"></i>
+                </div>
+                <h5 class="fw-bold">Inventory Velocity</h5>
+                <p class="text-muted small">Identify slow-moving items and track stock-out probabilities.</p>
+                <button class="btn btn-link p-0 fw-bold text-decoration-none mt-3"
+                    onclick="window.ui.showToast('Inventory insights feature coming soon!', 'info')">View Report <i
+                        class="bi bi-arrow-right ms-1"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="premiumLockOverlay" class="mt-5 text-center p-5 bg-white rounded-4 border shadow-sm d-none">
+    <div class="icon-box bg-primary-subtle text-primary mb-3 mx-auto"
+        style="width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+        <i class="bi bi-lock-fill fs-3"></i>
+    </div>
+    <h5 class="fw-bold">Advanced Analytics Locked</h5>
+    <p class="text-muted mb-4">Your current plan does not include detailed business intelligence reports.</p>
+    <a href="/subscription" class="btn btn-primary px-4">Upgrade to Unlock</a>
+</div>
+
+<div class="mt-5 text-center p-5 bg-light rounded-4 border border-dashed" id="comingSoonBanner">
+    <h5 class="fw-bold text-muted">Advanced Analytics Coming Soon</h5>
+    <p class="text-muted mb-0">We are building MNC-grade AI insights for your business.</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    async function checkAccess() {
+        try {
+            const resp = await axios.get(`${API_URL}/subscriptions/status`);
+            const { details } = resp.data;
+
+            if (!details.limits.reports) {
+                // Lock reports
+                document.querySelectorAll('.card button').forEach(btn => {
+                    btn.disabled = true;
+                    btn.classList.add('opacity-50');
+                    btn.classList.replace('text-decoration-none', 'text-muted');
+                    btn.innerHTML = '<i class="bi bi-lock-fill me-1"></i> Locked';
+                });
+                document.getElementById('premiumLockOverlay').classList.remove('d-none');
+                document.getElementById('comingSoonBanner').classList.add('d-none');
+            }
+        } catch (e) {
+            console.error("Access check failed", e);
+        }
+    }
+
+    async function downloadDashboardReport() {
+        try {
+            const resp = await axios.get(`${API_URL}/dashboard/report/summary`, { responseType: 'blob' });
+            const url = window.URL.createObjectURL(new Blob([resp.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'sales_revenue_report.csv');
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.ui.showToast('Report downloaded successfully!', 'success');
+        } catch (e) {
+            window.ui.showToast('Failed to download report.', 'danger');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', checkAccess);
+</script>
+{% endblock %}

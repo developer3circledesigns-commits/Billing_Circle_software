@@ -1,0 +1,2493 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}New Invoice | Billing Circle{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Modern Invoice Form Design System */
+    :root {
+        --invoice-primary: #3b82f6;
+        --invoice-success: #10b981;
+        --invoice-warning: #f59e0b;
+        --invoice-danger: #ef4444;
+        --invoice-gray: #6b7280;
+        --invoice-light: #f8fafc;
+        --invoice-border: #e5e7eb;
+        --invoice-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        --invoice-shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        --invoice-radius: 12px;
+    }
+
+    /* Form Container */
+    .invoice-form-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    /* Header Styling */
+    .form-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1.5rem 2rem;
+        border-radius: var(--invoice-radius);
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .form-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+        background-size: 30px 30px;
+        opacity: 0.3;
+        pointer-events: none;
+    }
+
+    /* Cards */
+    .form-card {
+        background: white;
+        border: 1px solid var(--invoice-border);
+        border-radius: var(--invoice-radius);
+        box-shadow: var(--invoice-shadow);
+        transition: box-shadow 0.2s ease;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+
+    .form-card:hover {
+        box-shadow: var(--invoice-shadow-lg);
+    }
+
+    .form-card-header {
+        background: var(--invoice-light);
+        border-bottom: 1px solid var(--invoice-border);
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .form-card-body {
+        padding: 1.5rem;
+    }
+
+    /* Customer Selection */
+    .customer-select-container {
+        position: relative;
+    }
+
+    .customer-select-container .form-select {
+        padding-left: 3rem;
+        background-image: none;
+        border: 2px solid var(--invoice-border);
+        border-radius: 8px;
+        font-size: 1rem;
+        height: 54px;
+    }
+
+    .customer-select-container .form-select:focus {
+        border-color: var(--invoice-primary);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .customer-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--invoice-gray);
+        z-index: 5;
+    }
+
+    /* Items Section */
+    .items-table-container {
+        overflow-x: auto;
+        border-radius: 8px;
+        border: 1px solid var(--invoice-border);
+        margin-bottom: 1rem;
+    }
+
+    .items-table {
+        width: 100%;
+        min-width: 800px;
+        margin-bottom: 0;
+    }
+
+    .items-table thead th {
+        background: var(--invoice-light);
+        color: var(--invoice-gray);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.75rem;
+        padding: 1rem 1.25rem;
+        border-bottom: 2px solid var(--invoice-border);
+        white-space: nowrap;
+    }
+
+    .items-table tbody td {
+        padding: 1rem 1.25rem;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--invoice-border);
+        background: white;
+    }
+
+    .items-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .items-table tbody tr:hover td {
+        background: var(--invoice-light);
+    }
+
+    /* Item Row Inputs */
+    .item-select {
+        border: 1px solid var(--invoice-border);
+        border-radius: 6px;
+        padding: 0.5rem;
+        width: 100%;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+    }
+
+    .item-select:focus {
+        border-color: var(--invoice-primary);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        outline: none;
+    }
+
+    .item-input {
+        border: 1px solid var(--invoice-border);
+        border-radius: 6px;
+        padding: 0.5rem;
+        width: 100%;
+        font-size: 0.875rem;
+        text-align: right;
+        transition: all 0.2s ease;
+    }
+
+    .item-input:focus {
+        border-color: var(--invoice-primary);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        outline: none;
+    }
+
+    .item-input.qty-input {
+        text-align: center;
+    }
+
+    .stock-info {
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .stock-low {
+        color: var(--invoice-danger);
+    }
+
+    .stock-ok {
+        color: var(--invoice-success);
+    }
+
+    /* Row Actions */
+    .row-actions {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+    }
+
+    .row-action-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--invoice-border);
+        background: white;
+        color: var(--invoice-gray);
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .row-action-btn:hover {
+        background: var(--invoice-light);
+        border-color: var(--invoice-gray);
+        color: var(--invoice-primary);
+    }
+
+    .row-action-btn.delete:hover {
+        background: #fee2e2;
+        border-color: var(--invoice-danger);
+        color: var(--invoice-danger);
+    }
+
+    /* Mobile Items Cards */
+    .mobile-item-card {
+        background: white;
+        border: 1px solid var(--invoice-border);
+        border-radius: 10px;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        position: relative;
+        transition: all 0.2s ease;
+    }
+
+    .mobile-item-card:hover {
+        border-color: var(--invoice-primary);
+        box-shadow: var(--invoice-shadow);
+    }
+
+    .mobile-item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--invoice-border);
+    }
+
+    .mobile-item-fields {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .mobile-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .mobile-field label {
+        font-size: 0.75rem;
+        color: var(--invoice-gray);
+        font-weight: 500;
+    }
+
+    /* Sidebar Styling */
+    .sidebar-card {
+        position: sticky;
+        top: 1rem;
+        background: white;
+        border: 1px solid var(--invoice-border);
+        border-radius: var(--invoice-radius);
+        box-shadow: var(--invoice-shadow-lg);
+        overflow: hidden;
+    }
+
+    /* Totals Display */
+    .totals-section {
+        padding: 1.5rem;
+    }
+
+    .total-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--invoice-border);
+    }
+
+    .total-row:last-child {
+        border-bottom: none;
+    }
+
+    .grand-total {
+        border-top: 2px solid var(--invoice-border);
+        border-bottom: 2px solid var(--invoice-border);
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .amount-label {
+        font-size: 0.875rem;
+        color: var(--invoice-gray);
+    }
+
+    .amount-value {
+        font-weight: 600;
+        font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    }
+
+    .grand-total .amount-value {
+        font-size: 1.5rem;
+        color: var(--invoice-primary);
+    }
+
+    /* Payment Status */
+    .payment-status-btns {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .payment-status-btn {
+        padding: 0.75rem;
+        border: 2px solid var(--invoice-border);
+        border-radius: 8px;
+        background: white;
+        color: var(--invoice-gray);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .payment-status-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--invoice-shadow);
+    }
+
+    .payment-status-btn.active {
+        border-color: currentColor;
+    }
+
+    .payment-status-btn.unpaid.active {
+        background: #fee2e2;
+        color: var(--invoice-danger);
+        border-color: var(--invoice-danger);
+    }
+
+    .payment-status-btn.partial.active {
+        background: #fef3c7;
+        color: var(--invoice-warning);
+        border-color: var(--invoice-warning);
+    }
+
+    .payment-status-btn.paid.active {
+        background: #d1fae5;
+        color: var(--invoice-success);
+        border-color: var(--invoice-success);
+    }
+
+    /* Amount Received */
+    .amount-received-container {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        border-radius: 8px;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid #bae6fd;
+    }
+
+    /* Submit Button */
+    .submit-btn {
+        background: linear-gradient(135deg, var(--invoice-primary), #2563eb);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 1rem 2rem;
+        font-size: 1.125rem;
+        font-weight: 600;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4);
+    }
+
+    .submit-btn:active {
+        transform: translateY(0);
+    }
+
+    .submit-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: 0.5s;
+    }
+
+    .submit-btn:hover::before {
+        left: 100%;
+    }
+
+    /* Empty State */
+    .empty-items-state {
+        padding: 3rem 1.5rem;
+        text-align: center;
+        color: var(--invoice-gray);
+    }
+
+    .empty-items-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    /* Notes Section */
+    .notes-container {
+        position: relative;
+    }
+
+    .notes-textarea {
+        border: 2px solid var(--invoice-border);
+        border-radius: 8px;
+        padding: 1rem;
+        width: 100%;
+        font-size: 0.875rem;
+        resize: vertical;
+        min-height: 120px;
+        transition: all 0.2s ease;
+    }
+
+    .notes-textarea:focus {
+        border-color: var(--invoice-primary);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        outline: none;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 992px) {
+        .invoice-form-container {
+            padding: 0 0.5rem;
+        }
+
+        .form-header {
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-card-body {
+            padding: 1.25rem;
+        }
+
+        .items-table thead {
+            display: none;
+        }
+
+        .items-table tbody tr {
+            display: block;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--invoice-border);
+            border-radius: 10px;
+            padding: 1.25rem;
+            background: white;
+        }
+
+        .items-table tbody td {
+            display: block;
+            text-align: left;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--invoice-border);
+        }
+
+        .items-table tbody td:last-child {
+            border-bottom: none;
+            padding-top: 1rem;
+        }
+
+        .items-table tbody td:before {
+            content: attr(data-label);
+            display: block;
+            font-weight: 600;
+            color: var(--invoice-gray);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .items-table tbody tr:hover td {
+            background: transparent;
+        }
+
+        .row-actions {
+            justify-content: flex-end;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .form-header {
+            border-radius: 0;
+            margin: -1rem -1rem 1.5rem -1rem;
+        }
+
+        .sidebar-card {
+            position: static;
+            margin-top: 1.5rem;
+        }
+
+        .payment-status-btns {
+            grid-template-columns: 1fr;
+        }
+
+        .mobile-item-fields {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .fade-in {
+        animation: fadeIn 0.3s ease forwards;
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateX(-20px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    .slide-in {
+        animation: slideIn 0.3s ease forwards;
+    }
+
+    /* Loading States */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1050;
+    }
+
+    /* Hide number spinners globally */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+        appearance: none;
+        margin: 0;
+    }
+
+    input[type=number] {
+        appearance: textfield;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: var(--invoice-light);
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+
+    /* Utility Classes */
+    .cursor-pointer {
+        cursor: pointer;
+    }
+
+    .text-currency {
+        font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    }
+
+    /* Fix for Bootstrap 5.3+ */
+    .form-select {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 16px 12px;
+    }
+</style>
+{% endblock %}
+
+
+{% block dashboard_content %}
+<div class="invoice-form-container">
+    <!-- Header -->
+    <div class="form-header">
+        <div class="row align-items-center">
+            <div class="col-12 col-md-8">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-2" style="--bs-breadcrumb-divider-color: rgba(255,255,255,0.5);">
+                        <li class="breadcrumb-item"><a href="/invoices"
+                                class="text-white text-decoration-none opacity-75"><i class="bi bi-arrow-left me-1"></i>
+                                Invoices</a></li>
+                        <li class="breadcrumb-item active text-white">New Invoice</li>
+                    </ol>
+                </nav>
+                <h1 class="h2 fw-bold mb-1" id="formTitle">
+                    <i class="bi bi-file-earmark-plus me-2"></i>
+                    Create New Invoice
+                </h1>
+                <p class="mb-0 opacity-75">Fill in customer details, add items, and generate invoice</p>
+            </div>
+            <div class="col-12 col-md-4 text-md-end mt-3 mt-md-0">
+                <div class="badge bg-white text-primary px-3 py-2 rounded-pill">
+                    <i class="bi bi-clock-history me-1"></i>
+                    <span id="saveStatus">Ready</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Form -->
+    <form id="invoiceForm" autocomplete="off">
+        <div class="row g-4">
+            <!-- Left Column: Customer & Items -->
+            <div class="col-lg-8">
+                <!-- Customer & Date Section -->
+                <div class="form-card">
+                    <div class="form-card-header">
+                        <h5 class="fw-bold mb-0">
+                            <i class="bi bi-person-circle me-2"></i>
+                            Customer & Invoice Details
+                        </h5>
+                        <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3">Required</span>
+                    </div>
+                    <div class="form-card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold d-flex align-items-center gap-2 mb-2">
+                                    <i class="bi bi-person-badge text-primary"></i>
+                                    Customer
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <div class="customer-select-container">
+                                    <i class="customer-icon bi bi-search"></i>
+                                    <select class="form-select" name="customer_id" id="customerSelect" required>
+                                        <option value="">Select Customer...</option>
+                                    </select>
+                                </div>
+                                <div class="mt-2">
+                                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none"
+                                        onclick="addNewCustomer()">
+                                        <i class="bi bi-plus-circle me-1"></i>
+                                        Add New Customer
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold d-flex align-items-center gap-2 mb-2">
+                                    <i class="bi bi-calendar-week text-primary"></i>
+                                    Invoice Details
+                                </label>
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <div class="mb-3">
+                                            <label class="form-label small text-muted mb-1">Invoice Date</label>
+                                            <input type="date" class="form-control" name="invoice_date" id="invoiceDate"
+                                                required>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="mb-3">
+                                            <label class="form-label small text-muted mb-1">Due Date</label>
+                                            <div class="input-group">
+                                                <input type="date" class="form-control" name="due_date" id="dueDate">
+                                                <button type="button" class="btn btn-outline-secondary"
+                                                    onclick="setDefaultDueDate()" title="Set 30 days from today">
+                                                    <i class="bi bi-calendar-plus"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Customer Info Preview -->
+                        <div class="row mt-3" id="customerInfoPreview" style="display: none;">
+                            <div class="col-12">
+                                <div class="p-3 bg-light rounded-3 border">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6 class="fw-bold mb-2" id="previewCustomerName">Customer Name</h6>
+                                            <p class="small text-muted mb-1" id="previewCustomerAddress">Address will
+                                                appear here</p>
+                                            <p class="small text-muted mb-0" id="previewCustomerGST">GSTIN: ---</p>
+                                        </div>
+                                        <div class="col-md-6 text-md-end">
+                                            <div
+                                                class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2">
+                                                <i class="bi bi-check-circle me-1"></i>
+                                                Customer Selected
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Items Section -->
+                <div class="form-card">
+                    <div class="form-card-header">
+                        <div class="d-flex justify-content-between align-items-center w-100">
+                            <h5 class="fw-bold mb-0">
+                                <i class="bi bi-cart-check me-2"></i>
+                                Items & Services
+                            </h5>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3"
+                                    id="itemCountBadge">
+                                    <i class="bi bi-box-seam me-1"></i>
+                                    <span id="itemCount">0</span> Items
+                                </span>
+                                <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3"
+                                    id="stockWarning" style="display: none;">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                    Low Stock
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-card-body">
+                        <!-- Desktop Table View -->
+                        <div class="d-none d-lg-block">
+                            <div class="items-table-container">
+                                <table class="items-table" id="itemsTable">
+                                    <thead>
+                                        <tr>
+                                            <th class="ps-4" style="width: 35%;">Item / Description</th>
+                                            <th class="text-center" style="width: 10%;">Qty</th>
+                                            <th class="text-center" style="width: 10%;">Unit</th>
+                                            <th class="text-end" style="width: 15%;">Rate (₹)</th>
+                                            <th class="text-end" style="width: 12%;">Tax %</th>
+                                            <th class="text-end" style="width: 15%;">Amount (₹)</th>
+                                            <th class="text-center" style="width: 3%;"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="itemsBody">
+                                        <!-- Items will be added here -->
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Empty State -->
+                            <div id="emptyItemsState" class="empty-items-state" style="display: block;">
+                                <i class="bi bi-cart-x"></i>
+                                <h6 class="fw-semibold mb-2">No Items Added</h6>
+                                <p class="text-muted mb-3">Add your first item to start creating the invoice</p>
+                                <button type="button" class="btn btn-primary" onclick="addItemRow()">
+                                    <i class="bi bi-plus-circle me-2"></i>
+                                    Add First Item
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Mobile Card View -->
+                        <div class="d-lg-none" id="mobileItemsContainer">
+                            <!-- Mobile items will be added here -->
+                        </div>
+
+                        <!-- Add Item Button -->
+                        <div class="mt-4 pt-3 border-top">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <button type="button" class="btn btn-outline-primary" id="addRowBtn"
+                                        onclick="addItemRow()">
+                                        <i class="bi bi-plus-circle me-2"></i>
+                                        Add Item
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary ms-2"
+                                        onclick="addBlankRow()">
+                                        <i class="bi bi-plus-square me-2"></i>
+                                        Add Blank Row
+                                    </button>
+                                </div>
+                                <div class="text-end">
+                                    <p class="small text-muted mb-0">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Tax calculations update automatically
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notes & Terms -->
+                <div class="form-card">
+                    <div class="form-card-header">
+                        <h5 class="fw-bold mb-0">
+                            <i class="bi bi-journal-text me-2"></i>
+                            Notes & Terms
+                        </h5>
+                    </div>
+                    <div class="form-card-body">
+                        <div class="notes-container">
+                            <label class="form-label fw-semibold mb-2">
+                                Additional Notes / Payment Instructions
+                            </label>
+                            <textarea class="notes-textarea" name="notes" id="notes" rows="4"
+                                placeholder="Add any special instructions, thank you note, or payment terms here..."></textarea>
+                            <div class="mt-2 d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="bi bi-lightbulb me-1"></i>
+                                    These notes will appear on the printed invoice
+                                </small>
+                                <small class="text-muted" id="notesCounter">0/500 characters</small>
+                            </div>
+                        </div>
+
+                        <!-- Quick Templates -->
+                        <div class="mt-4">
+                            <label class="form-label small text-muted mb-2">Quick Templates</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary cursor-pointer"
+                                    onclick="applyTemplate('standard')">
+                                    Standard Terms
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary cursor-pointer"
+                                    onclick="applyTemplate('advance')">
+                                    Advance Payment
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary cursor-pointer"
+                                    onclick="applyTemplate('thankyou')">
+                                    Thank You Note
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary cursor-pointer"
+                                    onclick="clearNotes()">
+                                    <i class="bi bi-x-circle me-1"></i>
+                                    Clear
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Summary & Actions -->
+            <div class="col-lg-4">
+                <div class="sidebar-card">
+                    <!-- Summary Section -->
+                    <div class="totals-section">
+                        <h5 class="fw-bold mb-4">
+                            <i class="bi bi-calculator me-2"></i>
+                            Invoice Summary
+                        </h5>
+
+                        <div class="total-row">
+                            <span class="amount-label">Subtotal</span>
+                            <span class="amount-value text-currency" id="displaySubTotal">₹ 0.00</span>
+                        </div>
+
+                        <div class="total-row">
+                            <span class="amount-label">Total Tax</span>
+                            <span class="amount-value text-currency text-success" id="displayTax">₹ 0.00</span>
+                        </div>
+
+                        <div class="summary-input-row">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="amount-label">Discount</span>
+                                <div class="input-group input-group-sm mb-0" style="width: 120px;">
+                                    <span class="input-group-text bg-light border-end-0">₹</span>
+                                    <input type="number" id="discount" class="form-control border-start-0 text-end"
+                                        value="0" min="0" step="0.01" oninput="calculateTotals()">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="summary-input-row">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="amount-label">Shipping</span>
+                                <div class="input-group input-group-sm mb-0" style="width: 120px;">
+                                    <span class="input-group-text bg-light border-end-0">₹</span>
+                                    <input type="number" id="shipping" class="form-control border-start-0 text-end"
+                                        value="0" min="0" step="0.01" oninput="calculateTotals()">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="total-row grand-total">
+                            <span class="amount-label">Grand Total</span>
+                            <span class="amount-value text-currency" id="displayGrandTotal">₹ 0.00</span>
+                        </div>
+
+                        <div class="mt-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="amount-label">Balance Due</span>
+                                <span class="h5 fw-bold text-primary text-currency" id="displayBalance">₹ 0.00</span>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar bg-success" id="paymentProgressBar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Status -->
+                    <div class="px-4 pb-4">
+                        <h6 class="fw-bold mb-3">
+                            <i class="bi bi-credit-card me-2"></i>
+                            Payment Status
+                        </h6>
+
+                        <div class="payment-status-btns">
+                            <button type="button" class="payment-status-btn unpaid active" data-status="unpaid">
+                                <i class="bi bi-clock fs-5"></i>
+                                <span>Unpaid</span>
+                            </button>
+                            <button type="button" class="payment-status-btn partial" data-status="partial">
+                                <i class="bi bi-percent fs-5"></i>
+                                <span>Partial</span>
+                            </button>
+                            <button type="button" class="payment-status-btn paid" data-status="paid">
+                                <i class="bi bi-check-circle fs-5"></i>
+                                <span>Paid</span>
+                            </button>
+                        </div>
+                        <input type="hidden" name="payment_status" id="paymentStatus" value="unpaid">
+
+                        <!-- Partial Payment Section -->
+                        <div class="amount-received-container" id="partialAmountDiv" style="display: none;">
+                            <label class="form-label fw-semibold mb-2">
+                                <i class="bi bi-cash-coin me-1"></i>
+                                Amount Received
+                            </label>
+                            <div class="input-group mb-2">
+                                <span class="input-group-text bg-white border-end-0">₹</span>
+                                <input type="number" class="form-control border-start-0" name="amount_received"
+                                    id="amountReceived" value="0" step="0.01" min="0" oninput="updateBalance()">
+                                <button type="button" class="btn btn-outline-secondary" onclick="setFullAmount()"
+                                    title="Set to full amount">
+                                    <i class="bi bi-arrow-up"></i>
+                                </button>
+                            </div>
+                            <small class="text-muted d-block">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Enter received amount for partial payment
+                            </small>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn submit-btn mt-4" id="submitBtn">
+                            <i class="bi bi-file-earmark-check"></i>
+                            <span id="submitBtnText">Create Invoice</span>
+                            <span class="ms-1 small opacity-75" id="totalPreview">(₹ 0.00)</span>
+                        </button>
+
+                        <!-- Save Options -->
+                        <div class="mt-3 text-center">
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-outline-secondary btn-sm cursor-pointer"
+                                    onclick="saveAsDraft()">
+                                    <i class="bi bi-save me-1"></i>
+                                    Save Draft
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm cursor-pointer"
+                                    onclick="previewInvoice()">
+                                    <i class="bi bi-eye me-1"></i>
+                                    Preview
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Auto-save Indicator -->
+                        <div class="mt-3 text-center">
+                            <small class="text-muted">
+                                <i class="bi bi-cloud-check me-1"></i>
+                                <span id="autoSaveStatus">Auto-save disabled</span>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="form-card mt-4">
+                    <div class="form-card-header">
+                        <h6 class="fw-bold mb-0">
+                            <i class="bi bi-lightning me-2"></i>
+                            Quick Actions
+                        </h6>
+                    </div>
+                    <div class="form-card-body">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <button type="button" class="btn btn-outline-secondary w-100 cursor-pointer"
+                                    onclick="clearForm()">
+                                    <i class="bi bi-eraser me-1"></i>
+                                    Clear
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button type="button" class="btn btn-outline-secondary w-100 cursor-pointer"
+                                    onclick="duplicateLastInvoice()">
+                                    <i class="bi bi-copy me-1"></i>
+                                    Duplicate
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button type="button" class="btn btn-outline-secondary w-100 cursor-pointer"
+                                    onclick="addDiscount()">
+                                    <i class="bi bi-percent me-1"></i>
+                                    Add Discount
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button type="button" class="btn btn-outline-secondary w-100 cursor-pointer"
+                                    onclick="printInvoice()">
+                                    <i class="bi bi-printer me-1"></i>
+                                    Print
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="formLoading" style="display: none;">
+    <div class="text-center">
+        <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+        <h5 class="fw-semibold mb-2">Loading Invoice Form</h5>
+        <p class="text-muted">Preparing your invoice creation workspace...</p>
+    </div>
+</div>
+
+<!-- Customer Modal (Placeholder) -->
+<div class="modal fade" id="customerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Customer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Customer creation form would appear here in production.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Global State
+    let inventoryItems = [];
+    let customers = [];
+    let rowCount = 0;
+    let autoSaveTimer = null;
+    const APP_API_URL = (typeof API_URL !== 'undefined') ? API_URL : window.location.origin + '/api';
+
+    // State management
+    const invoiceIdFromTemplate = "{{ invoice_id or '' }}";
+    const urlParams = new URLSearchParams(window.location.search);
+    const invoiceId = invoiceIdFromTemplate || urlParams.get('id');
+    const sourceQuoteId = urlParams.get('source_quote_id');
+
+    let currentCustomer = null;
+
+    const state = {
+        isSubmitting: false,
+        isEditMode: !!invoiceId,
+        invoiceId: invoiceId
+    };
+
+    // Initialize form
+    async function initForm() {
+        showLoading(true);
+        try {
+            // Load base data
+            await Promise.all([
+                loadCustomers(),
+                loadInventoryItems()
+            ]);
+
+            // Set today's date and default due date for new invoices
+            if (!state.isEditMode) {
+                const today = new Date();
+                const todayStr = today.toISOString().split('T')[0];
+                document.getElementById('invoiceDate').value = todayStr;
+                setDefaultDueDate();
+            }
+
+            // Set up form listeners
+            setupEventListeners();
+
+            // Check if we are editing an existing invoice
+            if (state.isEditMode) {
+                await loadInvoiceData(state.invoiceId);
+            }
+            // Check if we are creating from a quote
+            else if (sourceQuoteId) {
+                document.getElementById('formTitle').innerHTML = '<i class="bi bi-arrow-repeat me-2"></i>Convert Quote to Invoice';
+                await loadSourceQuote(sourceQuoteId);
+            } else {
+                // Add initial empty row
+                addItemRow();
+            }
+
+            // Restore draft if any (only for new invoices)
+            if (!state.isEditMode && !sourceQuoteId) {
+                restoreFormState();
+            }
+
+            // Initialize auto-save
+            initAutoSave();
+
+        } catch (error) {
+            console.error('Initialization error:', error);
+            showToast('Failed to initialize form', 'danger');
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    // Load invoice data for editing
+    async function loadInvoiceData(id) {
+        try {
+            const resp = await axios.get(`${APP_API_URL}/invoices/${id}`);
+            const invoice = resp.data;
+
+            // Set customer
+            document.getElementById('customerSelect').value = invoice.customer_id;
+            updateCustomerPreview();
+
+            // Set invoice details
+            document.getElementById('invoiceDate').value = invoice.invoice_date; // Assuming input type="date"
+            document.getElementById('dueDate').value = invoice.due_date; // Assuming input type="date"
+            if (invoice.notes) {
+                document.getElementById('notes').value = invoice.notes;
+                updateNotesCounter();
+            }
+
+            // Load Discount and Shipping
+            if (document.getElementById('discount')) {
+                document.getElementById('discount').value = invoice.discount_amount || 0;
+            }
+            if (document.getElementById('shipping')) {
+                document.getElementById('shipping').value = invoice.shipping_charges || 0;
+            }
+
+            // Handle payment status
+            const statusBtns = document.querySelectorAll('.payment-status-btn');
+            statusBtns.forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.querySelector(`.payment-status-btn.${invoice.payment_status}`);
+            if (activeBtn) activeBtn.classList.add('active');
+            document.getElementById('paymentStatus').value = invoice.payment_status;
+
+            if (invoice.payment_status !== 'unpaid') {
+                document.getElementById('partialAmountDiv').style.display = 'block';
+                document.getElementById('amountReceived').value = invoice.amount_received || 0;
+            }
+
+            // Clear existing items
+            clearAllItems();
+
+            // Add invoice items
+            if (invoice.items && Array.isArray(invoice.items)) {
+                for (const item of invoice.items) {
+                    addItemRowFromQuote(item); // Reuse the same logic for adding rows from data
+                }
+            }
+
+            // Update UI for Edit Mode
+            document.getElementById('formTitle').innerHTML = '<i class="bi bi-pencil-square me-2"></i>Edit Invoice';
+            document.getElementById('submitBtnText').textContent = 'Update Invoice';
+            document.title = 'Edit Invoice | Billing Circle';
+
+            calculateTotals();
+            updatePaymentProgress(); // Ensure progress bar and balance are correct
+
+            showToast('Invoice loaded successfully for editing', 'success');
+
+        } catch (error) {
+            console.error('Error loading invoice:', error);
+            showToast('Failed to load invoice data', 'danger');
+            // Fallback to adding an empty row if loading fails in edit mode
+            addItemRow();
+        }
+    }
+
+    // Show/hide loading overlay
+    function showLoading(show) {
+        const overlay = document.getElementById('formLoading');
+        if (overlay) {
+            overlay.style.display = show ? 'flex' : 'none';
+        }
+    }
+
+    // Load customers from API
+    async function loadCustomers() {
+        try {
+            const resp = await axios.get(`${APP_API_URL}/customers/`);
+            customers = resp.data || [];
+            const select = document.getElementById('customerSelect');
+
+            if (!select) return;
+
+            if (customers.length === 0) {
+                select.innerHTML = '<option value="">No customers found. Please add a customer first.</option>';
+                return;
+            }
+
+            select.innerHTML = '<option value="">Select a customer...</option>' +
+                customers.map(c => `
+                    <option value="${c.customer_id}" 
+                        data-address="${c.billing_address || ''}"
+                        data-city="${c.billing_city || ''}"
+                        data-state="${c.billing_state || ''}"
+                        data-state_code="${c.state_code || ''}"
+                        data-pincode="${c.billing_zip || ''}"
+                        data-gstin="${c.gstin || ''}"
+                        data-phone="${c.billing_phone || ''}"
+                        data-mobile="${c.mobile_number || ''}"
+                        data-email="${c.email || ''}">
+                        ${c.customer_name} (${c.customer_code})
+                    </option>
+                `).join('');
+
+        } catch (error) {
+            console.error('Error loading customers:', error);
+            const select = document.getElementById('customerSelect');
+            if (select) {
+                select.innerHTML = '<option value="">Error loading customers</option>';
+            }
+        }
+    }
+
+    // Load inventory items
+    async function loadInventoryItems() {
+        try {
+            const resp = await axios.get(`${APP_API_URL}/items/`);
+            inventoryItems = resp.data || [];
+        } catch (error) {
+            console.error('Error loading items:', error);
+            showToast('Failed to load inventory items', 'warning');
+        }
+    }
+
+    // Load source quote for conversion
+    async function loadSourceQuote(id) {
+        try {
+            const resp = await axios.get(`${APP_API_URL}/quotations/${id}`);
+            const quote = resp.data;
+
+            // Set customer
+            document.getElementById('customerSelect').value = quote.customer_id;
+            updateCustomerPreview();
+
+            // Clear existing items
+            clearAllItems();
+
+            // Handle items
+            if (quote.items && Array.isArray(quote.items)) {
+                clearAllItems();
+                for (const item of quote.items) {
+                    addItemRowFromQuote(item);
+                }
+
+                // Final recalculation after all items are added and rows processed
+                setTimeout(() => {
+                    calculateTotals();
+                    updatePaymentProgress();
+                }, 200);
+            }
+
+            // Set notes if any
+            if (quote.notes) {
+                document.getElementById('notes').value = quote.notes;
+                updateNotesCounter();
+            }
+
+            calculateTotals();
+            showToast('Quote loaded successfully', 'success');
+
+        } catch (error) {
+            console.error('Error loading quote:', error);
+            showToast('Failed to load quote', 'danger');
+            addItemRow(); // Add empty row as fallback
+        }
+    }
+
+    // Add item row from quote data
+    function addItemRowFromQuote(item) {
+        const rowId = addItemRow();
+        const select = document.getElementById(`item-select-${rowId}`);
+
+        if (select && item.item_id) {
+            select.value = item.item_id;
+            triggerItemSelect(rowId);
+
+            // Set quantities with delay to ensure DOM is ready
+            setTimeout(() => {
+                const qtyInput = document.getElementById(`qty-${rowId}`);
+                const rateInput = document.getElementById(`rate-${rowId}`);
+                const taxInput = document.getElementById(`tax-${rowId}`);
+
+                if (qtyInput) qtyInput.value = item.qty || 1;
+                if (rateInput) rateInput.value = item.rate || 0;
+                if (taxInput) taxInput.value = item.tax_percent || 0;
+
+                calculateRowTotal(rowId);
+            }, 50);
+        }
+    }
+
+    // Add new item row
+    function addItemRow() {
+        rowCount++;
+        const rowId = rowCount;
+
+        // Hide empty state
+        const emptyState = document.getElementById('emptyItemsState');
+        if (emptyState) emptyState.style.display = 'none';
+
+        // Desktop row
+        const tbody = document.getElementById('itemsBody');
+        if (tbody) {
+            const tr = document.createElement('tr');
+            tr.id = `row-${rowId}`;
+            tr.className = 'fade-in';
+            tr.innerHTML = getDesktopRowHtml(rowId);
+            tbody.appendChild(tr);
+        }
+
+        // Mobile card
+        const mobileContainer = document.getElementById('mobileItemsContainer');
+        if (mobileContainer) {
+            const mobileDiv = document.createElement('div');
+            mobileDiv.id = `mobile-row-${rowId}`;
+            mobileDiv.className = 'mobile-item-card slide-in';
+            mobileDiv.innerHTML = getMobileRowHtml(rowId);
+            mobileContainer.appendChild(mobileDiv);
+        }
+
+        // Update UI
+        updateItemCount();
+        attachRowEventListeners(rowId);
+        calculateRowTotal(rowId);
+
+        return rowId;
+    }
+
+    // Add blank row (no item selected)
+    function addBlankRow() {
+        const rowId = addItemRow();
+        // Don't auto-select anything
+    }
+
+    // Get desktop row HTML
+    function getDesktopRowHtml(id) {
+        return `
+            <td class="ps-4" data-label="Item">
+                <select class="item-select" id="item-select-${id}" data-row="${id}">
+                    <option value="">Select Item...</option>
+                    ${getItemOptionsHtml()}
+                </select>
+                <div class="stock-info" id="stock-info-${id}" style="display: none;">
+                    <i class="bi bi-box"></i>
+                    <span id="stock-text-${id}"></span>
+                </div>
+                <input type="hidden" id="item-id-${id}" name="items[${id}][item_id]">
+                <input type="hidden" id="item-name-${id}" name="items[${id}][item_name]">
+                <input type="hidden" id="item-unit-${id}" name="items[${id}][unit]">
+                <input type="hidden" id="item-hsn-${id}" name="items[${id}][hsn_code]">
+            </td>
+            <td class="text-center" data-label="Quantity">
+                <input type="number" class="item-input qty-input" id="qty-${id}" 
+                       data-row="${id}" value="1" min="0.01" step="0.01" oninput="calculateRowTotal(${id})">
+            </td>
+            <td class="text-center" data-label="Unit">
+                <span class="small text-muted" id="unit-display-${id}">--</span>
+            </td>
+            <td class="text-end" data-label="Rate">
+                <input type="number" class="item-input" id="rate-${id}" 
+                       data-row="${id}" value="0" min="0" step="0.01" oninput="calculateRowTotal(${id})">
+            </td>
+            <td class="text-end" data-label="Tax %">
+                <input type="number" class="item-input" id="tax-${id}" 
+                       data-row="${id}" value="0" min="0" max="100" step="0.1" oninput="calculateRowTotal(${id})">
+            </td>
+            <td class="text-end fw-bold" data-label="Amount">
+                <span id="row-total-${id}">₹ 0.00</span>
+            </td>
+            <td class="text-center" data-label="Actions">
+                <div class="row-actions">
+                    <button type="button" class="row-action-btn" onclick="duplicateRow(${id})" title="Duplicate">
+                        <i class="bi bi-files"></i>
+                    </button>
+                    <button type="button" class="row-action-btn delete" onclick="removeRow(${id})" title="Remove">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+    }
+
+    // Get mobile row HTML
+    function getMobileRowHtml(id) {
+        return `
+            <div class="mobile-item-header">
+                <h6 class="fw-bold mb-0 text-primary">Item #${id}</h6>
+                <div class="row-actions">
+                    <button type="button" class="row-action-btn" onclick="duplicateRow(${id})" title="Duplicate">
+                        <i class="bi bi-files"></i>
+                    </button>
+                    <button type="button" class="row-action-btn delete" onclick="removeRow(${id})" title="Remove">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="mobile-item-fields">
+                <div class="mobile-field">
+                    <label>Item</label>
+                    <select class="form-select form-select-sm" id="mobile-item-select-${id}" data-row="${id}" onchange="triggerMobileItemSelect(${id})">
+                        <option value="">Select Item...</option>
+                        ${getItemOptionsHtml()}
+                    </select>
+                </div>
+                <div class="mobile-field">
+                    <label>Quantity</label>
+                    <input type="number" class="form-control form-control-sm" id="mobile-qty-${id}" 
+                           data-row="${id}" value="1" min="0.01" step="0.01" oninput="syncMobileToDesktop(${id}, 'qty')">
+                </div>
+                <div class="mobile-field">
+                    <label>Rate (₹)</label>
+                    <input type="number" class="form-control form-control-sm" id="mobile-rate-${id}" 
+                           data-row="${id}" value="0" min="0" step="0.01" oninput="syncMobileToDesktop(${id}, 'rate')">
+                </div>
+                <div class="mobile-field">
+                    <label>Tax %</label>
+                    <input type="number" class="form-control form-control-sm" id="mobile-tax-${id}" 
+                           data-row="${id}" value="0" min="0" max="100" step="0.1" oninput="syncMobileToDesktop(${id}, 'tax')">
+                </div>
+            </div>
+            <div class="mt-3 pt-3 border-top">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="small fw-bold">Item Total</span>
+                    <span class="fw-bold text-primary" id="mobile-row-total-${id}">₹ 0.00</span>
+                </div>
+                <div class="stock-info mt-2" id="mobile-stock-info-${id}" style="display: none;">
+                    <i class="bi bi-box"></i>
+                    <span id="mobile-stock-text-${id}"></span>
+                </div>
+            </div>
+        `;
+    }
+
+    // Get item options HTML
+    function getItemOptionsHtml() {
+        if (!inventoryItems || inventoryItems.length === 0) {
+            return '<option value="">No items available</option>';
+        }
+
+        return inventoryItems.map(item => `
+            <option value="${item.item_id}"
+                data-name="${item.item_name || 'Unnamed Item'}"
+                data-rate="${item.selling_price || 0}"
+                data-tax="${item.tax_rate || 0}"
+                data-unit="${item.unit || ''}"
+                data-hsn="${item.hsn_code || ''}"
+                data-stock="${item.current_stock || 0}">
+                ${item.item_name || 'Unnamed Item'} (₹ ${parseFloat(item.selling_price || 0).toFixed(2)})
+            </option>
+        `).join('');
+    }
+
+    // Attach event listeners to row
+    function attachRowEventListeners(rowId) {
+        // Desktop events
+        const itemSelect = document.getElementById(`item-select-${rowId}`);
+        if (itemSelect) {
+            itemSelect.addEventListener('change', () => triggerItemSelect(rowId));
+        }
+    }
+
+    // Trigger item selection
+    function triggerItemSelect(rowId) {
+        const select = document.getElementById(`item-select-${rowId}`);
+        if (!select) return;
+
+        const option = select.selectedOptions[0];
+
+        if (!option || !option.value) {
+            // Clear row
+            document.getElementById(`item-id-${rowId}`).value = '';
+            document.getElementById(`item-name-${rowId}`).value = '';
+            document.getElementById(`item-unit-${rowId}`).value = '';
+            document.getElementById(`item-hsn-${rowId}`).value = '';
+            document.getElementById(`unit-display-${rowId}`).textContent = '--';
+            document.getElementById(`stock-info-${rowId}`).style.display = 'none';
+
+            const rateInput = document.getElementById(`rate-${rowId}`);
+            const taxInput = document.getElementById(`tax-${rowId}`);
+            if (rateInput) rateInput.value = 0;
+            if (taxInput) taxInput.value = 0;
+
+            // Sync to mobile
+            const mobileSelect = document.getElementById(`mobile-item-select-${rowId}`);
+            if (mobileSelect) mobileSelect.value = '';
+            document.getElementById(`mobile-stock-info-${rowId}`).style.display = 'none';
+        } else {
+            // Set values from selected item
+            const itemId = option.value;
+            const itemName = option.dataset.name;
+            const rate = parseFloat(option.dataset.rate) || 0;
+            const tax = parseFloat(option.dataset.tax) || 0;
+            const unit = option.dataset.unit || '';
+            const hsn = option.dataset.hsn || '';
+            const stock = parseFloat(option.dataset.stock) || 0;
+
+            document.getElementById(`item-id-${rowId}`).value = itemId;
+            document.getElementById(`item-name-${rowId}`).value = itemName;
+            document.getElementById(`item-unit-${rowId}`).value = unit;
+            document.getElementById(`item-hsn-${rowId}`).value = hsn;
+            document.getElementById(`unit-display-${rowId}`).textContent = unit || '--';
+
+            const rateInput = document.getElementById(`rate-${rowId}`);
+            const taxInput = document.getElementById(`tax-${rowId}`);
+            if (rateInput) rateInput.value = rate;
+            if (taxInput) taxInput.value = tax;
+
+            // Update stock info
+            const stockInfo = document.getElementById(`stock-info-${rowId}`);
+            const stockText = document.getElementById(`stock-text-${rowId}`);
+            if (stockInfo && stockText) {
+                if (stock > 0) {
+                    stockText.textContent = `Stock: ${stock} ${unit}`;
+                    stockInfo.className = 'stock-info stock-ok';
+                } else {
+                    stockText.textContent = 'Out of stock';
+                    stockInfo.className = 'stock-info stock-low';
+                }
+                stockInfo.style.display = 'block';
+            }
+
+            // Sync to mobile
+            const mobileSelect = document.getElementById(`mobile-item-select-${rowId}`);
+            if (mobileSelect) mobileSelect.value = itemId;
+
+            const mobileRate = document.getElementById(`mobile-rate-${rowId}`);
+            const mobileTax = document.getElementById(`mobile-tax-${rowId}`);
+            if (mobileRate) mobileRate.value = rate;
+            if (mobileTax) mobileTax.value = tax;
+
+            const mobileStockInfo = document.getElementById(`mobile-stock-info-${rowId}`);
+            const mobileStockText = document.getElementById(`mobile-stock-text-${rowId}`);
+            if (mobileStockInfo && mobileStockText) {
+                if (stock > 0) {
+                    mobileStockText.textContent = `Stock: ${stock} ${unit}`;
+                    mobileStockInfo.className = 'stock-info stock-ok';
+                } else {
+                    mobileStockText.textContent = 'Out of stock';
+                    mobileStockInfo.className = 'stock-info stock-low';
+                }
+                mobileStockInfo.style.display = 'block';
+            }
+        }
+
+        calculateRowTotal(rowId);
+        checkStockWarnings();
+    }
+
+    // Trigger mobile item selection
+    function triggerMobileItemSelect(rowId) {
+        const select = document.getElementById(`mobile-item-select-${rowId}`);
+        if (!select) return;
+
+        const option = select.selectedOptions[0];
+
+        // Sync to desktop
+        const desktopSelect = document.getElementById(`item-select-${rowId}`);
+        if (desktopSelect) {
+            desktopSelect.value = select.value;
+            triggerItemSelect(rowId);
+        }
+    }
+
+    // Sync mobile input to desktop
+    function syncMobileToDesktop(rowId, field) {
+        const mobileInput = document.getElementById(`mobile-${field}-${rowId}`);
+        if (!mobileInput) return;
+
+        const desktopInput = document.getElementById(`${field}-${rowId}`);
+        if (desktopInput) {
+            desktopInput.value = mobileInput.value;
+            calculateRowTotal(rowId);
+        }
+    }
+
+    // Calculate row total
+    function calculateRowTotal(rowId) {
+        const qtyInput = document.getElementById(`qty-${rowId}`);
+        const rateInput = document.getElementById(`rate-${rowId}`);
+        const taxInput = document.getElementById(`tax-${rowId}`);
+
+        if (!qtyInput || !rateInput || !taxInput) return 0;
+
+        const qty = parseFloat(qtyInput.value) || 0;
+        const rate = parseFloat(rateInput.value) || 0;
+        const taxPercent = parseFloat(taxInput.value) || 0;
+
+        const amount = qty * rate;
+        const tax = amount * (taxPercent / 100);
+        const total = amount + tax;
+
+        // Update desktop display
+        const rowTotalEl = document.getElementById(`row-total-${rowId}`);
+        if (rowTotalEl) {
+            rowTotalEl.textContent = `₹ ${total.toFixed(2)}`;
+        }
+
+        // Update mobile display
+        const mobileRowTotalEl = document.getElementById(`mobile-row-total-${rowId}`);
+        if (mobileRowTotalEl) {
+            mobileRowTotalEl.textContent = `₹ ${total.toFixed(2)}`;
+        }
+
+        // Sync mobile inputs
+        const mobileQty = document.getElementById(`mobile-qty-${rowId}`);
+        const mobileRate = document.getElementById(`mobile-rate-${rowId}`);
+        const mobileTax = document.getElementById(`mobile-tax-${rowId}`);
+
+        if (mobileQty) mobileQty.value = qty;
+        if (mobileRate) mobileRate.value = rate;
+        if (mobileTax) mobileTax.value = taxPercent;
+
+        calculateTotals();
+        return total;
+    }
+
+    // Calculate all totals
+    function calculateTotals() {
+        let subtotal = 0;
+        let totalTax = 0;
+
+        // Get all row IDs
+        const rows = document.querySelectorAll('[id^="row-"]');
+
+        rows.forEach(row => {
+            const rowId = row.id.replace('row-', '');
+            const qtyInput = document.getElementById(`qty-${rowId}`);
+            const rateInput = document.getElementById(`rate-${rowId}`);
+            const taxInput = document.getElementById(`tax-${rowId}`);
+
+            if (qtyInput && rateInput && taxInput) {
+                const qty = parseFloat(qtyInput.value) || 0;
+                const rate = parseFloat(rateInput.value) || 0;
+                const taxPercent = parseFloat(taxInput.value) || 0;
+
+                const amount = qty * rate;
+                const tax = amount * (taxPercent / 100);
+
+                subtotal += amount;
+                totalTax += tax;
+            }
+        });
+
+        // Apply discount and shipping
+        const discountInput = document.getElementById('discount');
+        const shippingInput = document.getElementById('shipping');
+
+        const discount = parseFloat(discountInput?.value) || 0;
+        const shipping = parseFloat(shippingInput?.value) || 0;
+
+        const grandTotal = subtotal + totalTax - discount + shipping;
+
+        // Update displays
+        const subTotalEl = document.getElementById('displaySubTotal');
+        const taxEl = document.getElementById('displayTax');
+        const grandTotalEl = document.getElementById('displayGrandTotal');
+        const balanceEl = document.getElementById('displayBalance');
+        const totalPreviewEl = document.getElementById('totalPreview');
+
+        if (subTotalEl) subTotalEl.textContent = `₹ ${subtotal.toFixed(2)}`;
+        if (taxEl) taxEl.textContent = `₹ ${totalTax.toFixed(2)}`;
+        if (grandTotalEl) grandTotalEl.textContent = `₹ ${grandTotal.toFixed(2)}`;
+        if (balanceEl) balanceEl.textContent = `₹ ${grandTotal.toFixed(2)}`;
+        if (totalPreviewEl) totalPreviewEl.textContent = `(₹ ${grandTotal.toFixed(2)})`;
+
+        // Update payment progress
+        updatePaymentProgress();
+
+        return { subtotal, totalTax, grandTotal };
+    }
+
+    // Update payment progress
+    function updatePaymentProgress() {
+        const grandTotalEl = document.getElementById('displayGrandTotal');
+        const amountReceivedInput = document.getElementById('amountReceived');
+        const progressBar = document.getElementById('paymentProgressBar');
+        const balanceEl = document.getElementById('displayBalance');
+
+        if (!grandTotalEl || !amountReceivedInput || !progressBar || !balanceEl) return;
+
+        const grandTotalText = grandTotalEl.textContent.replace('₹ ', '').replace(/,/g, '');
+        const grandTotal = parseFloat(grandTotalText) || 0;
+        const amountReceived = parseFloat(amountReceivedInput.value) || 0;
+
+        let progress = 0;
+        if (grandTotal > 0) {
+            progress = Math.min((amountReceived / grandTotal) * 100, 100);
+        }
+
+        progressBar.style.width = `${progress}%`;
+
+        // Update balance
+        const balance = Math.max(grandTotal - amountReceived, 0);
+        balanceEl.textContent = `₹ ${balance.toFixed(2)}`;
+    }
+
+    // Remove row
+    function removeRow(rowId) {
+        const rows = document.querySelectorAll('[id^="row-"]');
+        if (rows.length <= 1) {
+            showToast('Invoice must have at least one item', 'warning');
+            return;
+        }
+
+        // Remove desktop row
+        const row = document.getElementById(`row-${rowId}`);
+        if (row) row.remove();
+
+        // Remove mobile card
+        const mobileRow = document.getElementById(`mobile-row-${rowId}`);
+        if (mobileRow) mobileRow.remove();
+
+        updateItemCount();
+        calculateTotals();
+        checkStockWarnings();
+    }
+
+    // Duplicate row
+    function duplicateRow(rowId) {
+        const newRowId = addItemRow();
+
+        // Copy values from source row
+        const sourceSelect = document.getElementById(`item-select-${rowId}`);
+        const sourceQty = document.getElementById(`qty-${rowId}`);
+        const sourceRate = document.getElementById(`rate-${rowId}`);
+        const sourceTax = document.getElementById(`tax-${rowId}`);
+
+        if (sourceSelect && sourceSelect.value) {
+            const newSelect = document.getElementById(`item-select-${newRowId}`);
+            if (newSelect) {
+                newSelect.value = sourceSelect.value;
+                triggerItemSelect(newRowId);
+            }
+        }
+
+        setTimeout(() => {
+            if (sourceQty) {
+                const newQty = document.getElementById(`qty-${newRowId}`);
+                if (newQty) newQty.value = sourceQty.value;
+            }
+            if (sourceRate) {
+                const newRate = document.getElementById(`rate-${newRowId}`);
+                if (newRate) newRate.value = sourceRate.value;
+            }
+            if (sourceTax) {
+                const newTax = document.getElementById(`tax-${newRowId}`);
+                if (newTax) newTax.value = sourceTax.value;
+            }
+            calculateRowTotal(newRowId);
+        }, 100);
+    }
+
+    // Update item count
+    function updateItemCount() {
+        const count = document.querySelectorAll('[id^="row-"]').length;
+        const itemCountEl = document.getElementById('itemCount');
+        const itemCountBadgeEl = document.getElementById('itemCountBadge');
+        const emptyStateEl = document.getElementById('emptyItemsState');
+
+        if (itemCountEl) itemCountEl.textContent = count;
+        if (itemCountBadgeEl) {
+            itemCountBadgeEl.innerHTML = `
+                <i class="bi bi-box-seam me-1"></i>
+                ${count} ${count === 1 ? 'Item' : 'Items'}
+            `;
+        }
+        if (emptyStateEl) {
+            emptyStateEl.style.display = count === 0 ? 'block' : 'none';
+        }
+    }
+
+    // Check stock warnings
+    function checkStockWarnings() {
+        let lowStock = false;
+        let outOfStock = false;
+
+        // Get all rows with items
+        const rows = document.querySelectorAll('[id^="row-"]');
+
+        rows.forEach(row => {
+            const rowId = row.id.replace('row-', '');
+            const select = document.getElementById(`item-select-${rowId}`);
+
+            if (select && select.value) {
+                const option = select.selectedOptions[0];
+                const stock = parseFloat(option.dataset.stock) || 0;
+                const qty = parseFloat(document.getElementById(`qty-${rowId}`).value) || 0;
+
+                if (stock === 0) {
+                    outOfStock = true;
+                } else if (qty > stock) {
+                    lowStock = true;
+                }
+            }
+        });
+
+        const warningBadge = document.getElementById('stockWarning');
+        if (!warningBadge) return;
+
+        if (outOfStock) {
+            warningBadge.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>Out of Stock';
+            warningBadge.style.display = 'inline-flex';
+        } else if (lowStock) {
+            warningBadge.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>Low Stock';
+            warningBadge.style.display = 'inline-flex';
+        } else {
+            warningBadge.style.display = 'none';
+        }
+    }
+
+    // Clear all items
+    function clearAllItems() {
+        const itemsBody = document.getElementById('itemsBody');
+        const mobileContainer = document.getElementById('mobileItemsContainer');
+
+        if (itemsBody) itemsBody.innerHTML = '';
+        if (mobileContainer) mobileContainer.innerHTML = '';
+
+        rowCount = 0;
+        updateItemCount();
+        calculateTotals();
+    }
+
+    // Update customer preview
+    function updateCustomerPreview() {
+        const select = document.getElementById('customerSelect');
+        const preview = document.getElementById('customerInfoPreview');
+
+        if (!select || !preview) return;
+
+        const option = select.selectedOptions[0];
+
+        if (option && option.value) {
+            const address = option.dataset.address || '';
+            const city = option.dataset.city || '';
+            const state = option.dataset.state || '';
+            const gstin = option.dataset.gstin || '';
+
+            document.getElementById('previewCustomerName').textContent = option.text;
+            document.getElementById('previewCustomerAddress').textContent = `${address}${city ? ', ' + city : ''}${state ? ', ' + state : ''}`;
+            document.getElementById('previewCustomerGST').textContent = gstin ? `GSTIN: ${gstin}` : 'No GSTIN provided';
+
+            preview.style.display = 'block';
+        } else {
+            preview.style.display = 'none';
+        }
+    }
+
+    // Update notes counter
+    function updateNotesCounter() {
+        const textarea = document.getElementById('notes');
+        const counter = document.getElementById('notesCounter');
+
+        if (!textarea || !counter) return;
+
+        const length = textarea.value.length;
+        counter.textContent = `${length}/500 characters`;
+
+        if (length > 500) {
+            counter.className = 'text-danger';
+        } else if (length > 450) {
+            counter.className = 'text-warning';
+        } else {
+            counter.className = 'text-muted';
+        }
+    }
+
+    // Set default due date (30 days from today)
+    function setDefaultDueDate() {
+        const today = new Date();
+        const dueDate = new Date(today);
+        dueDate.setDate(dueDate.getDate() + 30);
+
+        const dueDateInput = document.getElementById('dueDate');
+        if (dueDateInput) {
+            dueDateInput.value = dueDate.toISOString().split('T')[0];
+        }
+    }
+
+    // Set amount received to full amount
+    function setFullAmount() {
+        const grandTotalEl = document.getElementById('displayGrandTotal');
+        const amountReceivedInput = document.getElementById('amountReceived');
+
+        if (!grandTotalEl || !amountReceivedInput) return;
+
+        const grandTotalText = grandTotalEl.textContent.replace('₹ ', '').replace(/,/g, '');
+        const grandTotal = parseFloat(grandTotalText) || 0;
+
+        amountReceivedInput.value = grandTotal.toFixed(2);
+        updateBalance();
+    }
+
+    // Update balance when amount received changes
+    function updateBalance() {
+        updatePaymentProgress();
+    }
+
+    // Setup event listeners
+    function setupEventListeners() {
+        // Customer selection
+        const customerSelect = document.getElementById('customerSelect');
+        if (customerSelect) {
+            customerSelect.addEventListener('change', updateCustomerPreview);
+        }
+
+        // Payment status buttons
+        document.querySelectorAll('.payment-status-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const status = this.dataset.status;
+
+                // Update active state
+                document.querySelectorAll('.payment-status-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+
+                // Update hidden input
+                const paymentStatusInput = document.getElementById('paymentStatus');
+                if (paymentStatusInput) {
+                    paymentStatusInput.value = status;
+                }
+
+                // Show/hide amount received
+                const amountDiv = document.getElementById('partialAmountDiv');
+                if (amountDiv) {
+                    amountDiv.style.display = status === 'partial' ? 'block' : 'none';
+                }
+
+                // Set amount received for paid status
+                if (status === 'paid') {
+                    setFullAmount();
+                } else if (status === 'unpaid') {
+                    const amountReceivedInput = document.getElementById('amountReceived');
+                    if (amountReceivedInput) {
+                        amountReceivedInput.value = 0;
+                    }
+                }
+
+                updateBalance();
+            });
+        });
+
+        // Amount received input
+        const amountReceivedInput = document.getElementById('amountReceived');
+        if (amountReceivedInput) {
+            amountReceivedInput.addEventListener('input', updateBalance);
+        }
+
+        // Notes textarea
+        const notesTextarea = document.getElementById('notes');
+        if (notesTextarea) {
+            notesTextarea.addEventListener('input', updateNotesCounter);
+        }
+
+        // Form submission
+        const invoiceForm = document.getElementById('invoiceForm');
+        if (invoiceForm) {
+            invoiceForm.addEventListener('submit', handleFormSubmit);
+        }
+
+        // Initial notes counter update
+        updateNotesCounter();
+    }
+
+    // Initialize auto-save
+    function initAutoSave() {
+        // Clear any existing timer
+        if (autoSaveTimer) {
+            clearInterval(autoSaveTimer);
+        }
+
+        // Save form state every 30 seconds
+        autoSaveTimer = setInterval(saveFormState, 30000);
+
+        const autoSaveStatusEl = document.getElementById('autoSaveStatus');
+        if (autoSaveStatusEl) {
+            autoSaveStatusEl.textContent = 'Auto-save enabled';
+        }
+    }
+
+    // Save form state
+    function saveFormState() {
+        try {
+            const formData = collectFormData();
+            localStorage.setItem('invoiceDraft', JSON.stringify(formData));
+            localStorage.setItem('invoiceDraftTimestamp', new Date().toISOString());
+
+            // Update status
+            const statusEl = document.getElementById('autoSaveStatus');
+            if (statusEl) {
+                statusEl.textContent = `Auto-saved at ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                statusEl.className = 'text-success';
+
+                setTimeout(() => {
+                    statusEl.className = 'text-muted';
+                }, 3000);
+            }
+        } catch (error) {
+            console.error('Error saving form state:', error);
+        }
+    }
+
+    // Restore form state from local storage
+    function restoreFormState() {
+        const draft = localStorage.getItem('invoiceDraft');
+        const timestamp = localStorage.getItem('invoiceDraftTimestamp');
+
+        if (draft && timestamp) {
+            try {
+                const formData = JSON.parse(draft);
+
+                // Check if draft is recent (e.g., within 24 hours)
+                const draftDate = new Date(timestamp);
+                const now = new Date();
+                const diffHours = Math.abs(now - draftDate) / (1000 * 60 * 60);
+
+                if (diffHours < 24) { // Only restore if draft is less than 24 hours old
+                    if (confirm('A draft invoice was found. Do you want to restore it?')) {
+                        // Populate customer
+                        if (formData.customer_id) {
+                            document.getElementById('customerSelect').value = formData.customer_id;
+                            updateCustomerPreview();
+                        }
+
+                        // Populate dates
+                        if (formData.invoice_date) document.getElementById('invoiceDate').value = formData.invoice_date;
+                        if (formData.due_date) document.getElementById('dueDate').value = formData.due_date;
+
+                        // Populate notes
+                        if (formData.notes) {
+                            document.getElementById('notes').value = formData.notes;
+                            updateNotesCounter();
+                        }
+
+                        // Populate payment status and amount received
+                        if (formData.payment_status) {
+                            const statusBtns = document.querySelectorAll('.payment-status-btn');
+                            statusBtns.forEach(btn => btn.classList.remove('active'));
+                            const activeBtn = document.querySelector(`.payment-status-btn.${formData.payment_status}`);
+                            if (activeBtn) activeBtn.classList.add('active');
+                            document.getElementById('paymentStatus').value = formData.payment_status;
+
+                            const amountDiv = document.getElementById('partialAmountDiv');
+                            if (amountDiv) {
+                                amountDiv.style.display = formData.payment_status === 'partial' ? 'block' : 'none';
+                            }
+                            if (formData.amount_received) {
+                                document.getElementById('amountReceived').value = formData.amount_received;
+                            }
+                        }
+
+                        // Clear existing items and add draft items
+                        clearAllItems();
+                        if (formData.items && Array.isArray(formData.items)) {
+                            formData.items.forEach(item => {
+                                const rowId = addItemRow();
+                                const select = document.getElementById(`item-select-${rowId}`);
+                                if (select && item.item_id) {
+                                    select.value = item.item_id;
+                                    triggerItemSelect(rowId);
+                                    setTimeout(() => {
+                                        document.getElementById(`qty-${rowId}`).value = item.qty || 1;
+                                        document.getElementById(`rate-${rowId}`).value = item.rate || 0;
+                                        document.getElementById(`tax-${rowId}`).value = item.tax || 0;
+                                        calculateRowTotal(rowId);
+                                    }, 50);
+                                }
+                            });
+                        } else {
+                            addItemRow(); // Add at least one empty row if no items in draft
+                        }
+
+                        calculateTotals();
+                        updatePaymentProgress();
+                        showToast(`Draft restored from ${new Date(timestamp).toLocaleTimeString()}.`, 'info');
+                    }
+                } else {
+                    // Draft is too old, clear it
+                    localStorage.removeItem('invoiceDraft');
+                    localStorage.removeItem('invoiceDraftTimestamp');
+                    showToast('An old invoice draft was found and cleared.', 'info');
+                    addItemRow(); // Add an empty row for a fresh start
+                }
+            } catch (e) {
+                console.error('Error restoring draft:', e);
+                localStorage.removeItem('invoiceDraft');
+                localStorage.removeItem('invoiceDraftTimestamp');
+                showToast('Failed to restore draft. Starting fresh.', 'danger');
+                addItemRow(); // Add an empty row for a fresh start
+            }
+        } else {
+            // No draft found, add an empty row for a fresh start
+            addItemRow();
+        }
+    }
+
+    // Collect form data
+    function collectFormData() {
+        const data = {
+            customer_id: document.getElementById('customerSelect')?.value || '',
+            invoice_date: document.getElementById('invoiceDate')?.value || '',
+            due_date: document.getElementById('dueDate')?.value || '',
+            notes: document.getElementById('notes')?.value || '',
+            payment_status: document.getElementById('paymentStatus')?.value || 'unpaid',
+            amount_received: document.getElementById('amountReceived')?.value || '0',
+            items: []
+        };
+
+        // Collect items
+        const rows = document.querySelectorAll('[id^="row-"]');
+        rows.forEach(row => {
+            const rowId = row.id.replace('row-', '');
+            const select = document.getElementById(`item-select-${rowId}`);
+
+            if (select && select.value) {
+                data.items.push({
+                    item_id: select.value,
+                    qty: document.getElementById(`qty-${rowId}`)?.value || '1',
+                    rate: document.getElementById(`rate-${rowId}`)?.value || '0',
+                    tax: document.getElementById(`tax-${rowId}`)?.value || '0'
+                });
+            }
+        });
+
+        return data;
+    }
+
+    // Handle form submission
+    async function handleFormSubmit(e) {
+        e.preventDefault();
+
+        // Prevent multiple submissions
+        if (state.isSubmitting) return;
+        state.isSubmitting = true;
+
+        // Validation
+        if (!validateForm()) {
+            state.isSubmitting = false;
+            return;
+        }
+
+        // Prepare data
+        const formData = prepareFormData();
+
+        // Submit
+        await submitForm(formData);
+        state.isSubmitting = false;
+    }
+
+    // Validate form
+    function validateForm() {
+        // Check customer
+        const customerSelect = document.getElementById('customerSelect');
+        if (!customerSelect || !customerSelect.value) {
+            showToast('Please select a customer', 'warning');
+            customerSelect?.focus();
+            return false;
+        }
+
+        // Check items
+        let hasValidItems = false;
+        const rows = document.querySelectorAll('[id^="row-"]');
+
+        rows.forEach(row => {
+            const rowId = row.id.replace('row-', '');
+            const select = document.getElementById(`item-select-${rowId}`);
+            if (select && select.value) {
+                const qty = parseFloat(document.getElementById(`qty-${rowId}`)?.value) || 0;
+                const rate = parseFloat(document.getElementById(`rate-${rowId}`)?.value) || 0;
+
+                if (qty > 0 && rate > 0) {
+                    hasValidItems = true;
+                }
+            }
+        });
+
+        if (!hasValidItems) {
+            showToast('Please add at least one valid item with quantity and rate', 'warning');
+            return false;
+        }
+
+        return true;
+    }
+
+    // Prepare form data for submission
+    function prepareFormData() {
+        const totals = calculateTotals();
+
+        // Collect items
+        const items = [];
+        const rows = document.querySelectorAll('[id^="row-"]');
+
+        rows.forEach(row => {
+            const rowId = row.id.replace('row-', '');
+            const select = document.getElementById(`item-select-${rowId}`);
+
+            if (select && select.value) {
+                const qty = parseFloat(document.getElementById(`qty-${rowId}`)?.value) || 0;
+                const rate = parseFloat(document.getElementById(`rate-${rowId}`)?.value) || 0;
+                const taxPercent = parseFloat(document.getElementById(`tax-${rowId}`)?.value) || 0;
+
+                const amount = qty * rate;
+                const taxAmount = amount * (taxPercent / 100);
+
+                items.push({
+                    item_id: select.value,
+                    item_name: document.getElementById(`item-name-${rowId}`)?.value || '',
+                    unit: document.getElementById(`item-unit-${rowId}`)?.value || '',
+                    hsn_code: document.getElementById(`item-hsn-${rowId}`)?.value || null,
+                    qty: qty,
+                    rate: rate,
+                    tax_percent: taxPercent,
+                    tax_amount: taxAmount,
+                    total: amount + taxAmount
+                });
+            }
+        });
+
+        // Payment calculation
+        const status = document.getElementById('paymentStatus')?.value || 'unpaid';
+        let amountReceived = 0;
+
+        if (status === 'paid') {
+            amountReceived = totals.grandTotal;
+        } else if (status === 'partial') {
+            amountReceived = parseFloat(document.getElementById('amountReceived')?.value) || 0;
+        }
+
+        // Build payload
+        const customerSelect = document.getElementById('customerSelect');
+        const customerOption = customerSelect?.selectedOptions[0];
+
+        const payload = {
+            customer_id: customerSelect?.value || '',
+            customer_name: customerOption?.text || '',
+            customer_address: customerOption?.dataset.address || '',
+            customer_city: customerOption?.dataset.city || '',
+            customer_state: customerOption?.dataset.state || '',
+            customer_state_code: customerOption?.dataset.state_code || '',
+            customer_pincode: customerOption?.dataset.pincode || '',
+            customer_phone: customerOption?.dataset.mobile || customerOption?.dataset.phone || '',
+            customer_email: customerOption?.dataset.email || '',
+            customer_gstin: customerOption?.dataset.gstin || '',
+
+            invoice_date: document.getElementById('invoiceDate')?.value || new Date().toISOString().split('T')[0],
+            due_date: document.getElementById('dueDate')?.value || null,
+            items: items,
+            sub_total: totals.subtotal,
+            total_tax: totals.totalTax,
+            grand_total: totals.grandTotal,
+            discount_amount: parseFloat(document.getElementById('discount')?.value) || 0,
+            shipping_charges: parseFloat(document.getElementById('shipping')?.value) || 0,
+            payment_status: status,
+            amount_received: amountReceived,
+            balance_amount: totals.grandTotal - amountReceived,
+            notes: document.getElementById('notes')?.value?.trim() || '',
+            quotation_id: sourceQuoteId || null
+        };
+
+        return payload;
+    }
+
+    // Submit form to API
+    async function submitForm(payload) {
+        const btn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('submitBtnText');
+        if (!btn || !btnText) return;
+
+        const originalContent = btnText.textContent;
+        const loadingText = state.isEditMode ? 'Updating Invoice...' : 'Creating Invoice...';
+
+        // Disable button and show loading
+        btn.disabled = true;
+        btnText.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>${loadingText}`;
+
+        try {
+            let response;
+            if (state.isEditMode) {
+                response = await axios.put(`${APP_API_URL}/invoices/${state.invoiceId}`, payload);
+            } else {
+                response = await axios.post(`${APP_API_URL}/invoices/`, payload);
+            }
+
+            const invoice = response.data;
+
+            // Clear draft only if creating a new invoice
+            if (!state.isEditMode) {
+                localStorage.removeItem('invoiceDraft');
+            }
+            localStorage.removeItem('invoiceDraftTimestamp'); // Always clear timestamp
+
+            showToast(`Invoice ${state.isEditMode ? 'updated' : 'created'} successfully!`, 'success');
+
+            // Redirect to view page with print option
+            setTimeout(() => {
+                window.location.href = `/invoices/view/${response.data.invoice_id}?print=true`;
+            }, 1500);
+
+        } catch (error) {
+            console.error('Error creating invoice:', error);
+
+            // Re-enable button
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+
+            // Show error
+            const errorMessage = error.response?.data?.detail || 'Failed to create invoice. Please try again.';
+            showToast(errorMessage, 'danger');
+        }
+    }
+
+    // Utility functions
+    function showToast(message, type = 'info') {
+        if (window.ui && window.ui.showToast) {
+            window.ui.showToast(message, type);
+        } else {
+            alert(message);
+        }
+    }
+
+    function addNewCustomer() {
+        const modalElement = document.getElementById('customerModal');
+        if (modalElement && window.bootstrap) {
+            const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+            modal.show();
+        } else {
+            showToast('Customer modal not available', 'warning');
+        }
+    }
+
+    function applyTemplate(template) {
+        const templates = {
+            standard: 'Payment due within 30 days. Late payments subject to 1.5% monthly interest.',
+            advance: '50% advance payment required. Balance due before delivery.',
+            thankyou: 'Thank you for your business! We appreciate your trust in our services.'
+        };
+
+        const textarea = document.getElementById('notes');
+        if (textarea) {
+            textarea.value = templates[template] || '';
+            updateNotesCounter();
+        }
+    }
+
+    function clearNotes() {
+        const textarea = document.getElementById('notes');
+        if (textarea) {
+            textarea.value = '';
+            updateNotesCounter();
+        }
+    }
+
+    function saveAsDraft() {
+        saveFormState();
+        showToast('Draft saved locally', 'success');
+    }
+
+    function previewInvoice() {
+        if (validateForm()) {
+            const formData = prepareFormData();
+            // In production, this would open a preview modal or new tab
+            showToast('Preview would show invoice summary', 'info');
+        }
+    }
+
+    function clearForm() {
+        if (confirm('Clear all form data? This cannot be undone.')) {
+            const customerSelect = document.getElementById('customerSelect');
+            if (customerSelect) customerSelect.value = '';
+
+            clearAllItems();
+
+            const notesTextarea = document.getElementById('notes');
+            if (notesTextarea) notesTextarea.value = '';
+
+            const amountReceivedInput = document.getElementById('amountReceived');
+            if (amountReceivedInput) amountReceivedInput.value = 0;
+
+            const paymentStatusInput = document.getElementById('paymentStatus');
+            if (paymentStatusInput) paymentStatusInput.value = 'unpaid';
+
+            document.querySelectorAll('.payment-status-btn').forEach(btn => btn.classList.remove('active'));
+            const unpaidBtn = document.querySelector('.payment-status-btn.unpaid');
+            if (unpaidBtn) unpaidBtn.classList.add('active');
+
+            const partialAmountDiv = document.getElementById('partialAmountDiv');
+            if (partialAmountDiv) partialAmountDiv.style.display = 'none';
+
+            updateCustomerPreview();
+            updateNotesCounter();
+            calculateTotals();
+
+            showToast('Form cleared', 'info');
+        }
+    }
+
+    function duplicateLastInvoice() {
+        showToast('This would duplicate the last invoice', 'info');
+    }
+
+    function addDiscount() {
+        showToast('Discount feature would be implemented here', 'info');
+    }
+
+    function printInvoice() {
+        if (validateForm()) {
+            showToast('Print preview would open', 'info');
+        }
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', initForm);
+</script>
+{% endblock %}

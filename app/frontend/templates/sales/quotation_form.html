@@ -1,0 +1,1963 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}{{ 'Edit' if quote_id else 'New' }} Quotation | Billing Circle{% endblock %}
+
+{% block dashboard_content %}
+<div class="quotation-create-page">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-left">
+                <nav class="breadcrumb-nav">
+                    <a href="/quotations" class="breadcrumb-back">
+                        <i class="bi bi-arrow-left"></i>
+                        <span>Back to Quotations</span>
+                    </a>
+                </nav>
+                <div class="header-title">
+                    <h1>{{ 'Edit' if quote_id else 'New' }} Quotation</h1>
+                    <p class="subtitle">{{ 'Update existing quotation' if quote_id else 'Create new price estimate for
+                        customer' }}</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="d-flex gap-2">
+                    <a href="/quotations" class="btn btn-outline">
+                        <i class="bi bi-x-lg"></i>
+                        <span class="btn-label">Cancel</span>
+                    </a>
+                    <button type="submit" form="quoteForm" class="btn btn-primary" id="submitBtn">
+                        <i class="bi bi-check-lg"></i>
+                        <span class="btn-label" id="submitBtnText">
+                            {{ 'Update' if quote_id else 'Create' }} Quotation
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quotation Form -->
+    <form id="quoteForm" novalidate>
+        <div class="form-container">
+            <div class="form-columns">
+                <!-- Left Column -->
+                <div class="left-column">
+                    <!-- Customer Details Card -->
+                    <div class="form-card">
+                        <div class="card-header">
+                            <i class="bi bi-person-badge"></i>
+                            <h3>Customer Details</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-grid">
+                                <div class="form-group full-width">
+                                    <label for="customerSelect" class="form-label">
+                                        Select Customer
+                                        <span class="required">*</span>
+                                    </label>
+                                    <div class="select-wrapper">
+                                        <select class="form-select" name="customer_id" id="customerSelect" required>
+                                            <option value="">Loading customers...</option>
+                                        </select>
+                                        <i class="bi bi-chevron-down select-icon"></i>
+                                    </div>
+                                    <div class="invalid-feedback">Please select a customer</div>
+                                </div>
+
+                                <div class="form-group full-width">
+                                    <label for="validUntil" class="form-label">Valid Until</label>
+                                    <div class="date-input-wrapper">
+                                        <input type="date" class="form-control" name="valid_until" id="validUntil">
+                                        <i class="bi bi-calendar date-icon"></i>
+                                    </div>
+                                    <div class="form-hint">Quotation expiration date (default: 30 days)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Items Table Card -->
+                    <div class="form-card">
+                        <div class="card-header">
+                            <i class="bi bi-cart"></i>
+                            <h3>Items & Services</h3>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-container">
+                                <div class="table-responsive">
+                                    <table class="items-table" id="itemsTable">
+                                        <thead>
+                                            <tr>
+                                                <th class="item-col">Item Details</th>
+                                                <th class="qty-col">Qty</th>
+                                                <th class="rate-col">Rate (₹)</th>
+                                                <th class="tax-col">Tax %</th>
+                                                <th class="amount-col">Amount (₹)</th>
+                                                <th class="action-col"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="itemsBody">
+                                            <!-- Items will be injected here -->
+                                            <tr class="empty-state">
+                                                <td colspan="6" class="text-center py-4">
+                                                    <div class="loading-indicator">
+                                                        <div class="spinner"></div>
+                                                        <span>Loading items...</span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="table-footer">
+                                <button type="button" class="btn btn-outline btn-sm" id="addRow">
+                                    <i class="bi bi-plus-lg"></i>
+                                    <span>Add Item</span>
+                                </button>
+                                <div id="itemsError" class="error-message">
+                                    Please add at least one item
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notes & Terms Card -->
+                    <div class="form-card">
+                        <div class="card-header">
+                            <i class="bi bi-file-text"></i>
+                            <h3>Notes & Terms</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label for="notes" class="form-label">Customer Notes</label>
+                                <div class="textarea-wrapper">
+                                    <textarea class="form-control" name="notes" id="notes" rows="3"
+                                        placeholder="Additional notes for the customer..."></textarea>
+                                    <div class="char-count">
+                                        <span id="notesCount">0</span>/500
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="termsConditions" class="form-label">Terms & Conditions</label>
+                                <div class="textarea-wrapper">
+                                    <textarea class="form-control" name="terms_conditions" id="termsConditions" rows="3"
+                                        placeholder="Payment terms, delivery conditions, warranties..."></textarea>
+                                    <div class="char-count">
+                                        <span id="termsCount">0</span>/1000
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div class="right-column">
+                    <!-- Summary Card -->
+                    <div class="summary-card sticky-card">
+                        <div class="card-header">
+                            <i class="bi bi-calculator"></i>
+                            <h3>Quotation Summary</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="summary-section">
+                                <div class="summary-row">
+                                    <span class="summary-label">Sub Total</span>
+                                    <span class="summary-value" id="displaySubTotal">₹ 0.00</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span class="summary-label">Tax Amount</span>
+                                    <span class="summary-value" id="displayTax">₹ 0.00</span>
+                                </div>
+                                <div class="summary-divider"></div>
+                                <div class="summary-row grand-total">
+                                    <span class="summary-label">Grand Total</span>
+                                    <span class="summary-value" id="displayGrandTotal">₹ 0.00</span>
+                                </div>
+                            </div>
+
+                            <div class="summary-actions">
+                                <button type="submit" class="btn btn-primary btn-block" id="submitBtnMobile">
+                                    <i class="bi bi-check-lg"></i>
+                                    <span>{{ 'Update' if quote_id else 'Create' }} Quotation</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Success Toast (Hidden) -->
+<div class="toast-container" id="toastContainer">
+    <div class="toast" role="alert">
+        <div class="toast-body">
+            <i class="bi bi-check-circle-fill toast-icon success"></i>
+            <div class="toast-content">
+                <div class="toast-title">Success</div>
+                <div class="toast-message">Quotation created successfully!</div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+
+<!-- Item Select Modal -->
+<div class="modal fade" id="itemSelectModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="bi bi-box"></i>
+                    <h5>Select Inventory Item</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="search-wrapper mb-4">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" class="form-control search-input" id="itemSearch"
+                        placeholder="Search items by name or SKU...">
+                </div>
+
+                <div class="items-list" id="itemsList">
+                    <!-- Items will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Base Variables */
+    :root {
+        --primary: #4361ee;
+        --primary-light: #eef2ff;
+        --primary-dark: #3a56d4;
+        --secondary: #64748b;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --light: #f8fafc;
+        --dark: #1e293b;
+        --border: #e2e8f0;
+        --border-light: #f1f5f9;
+        --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
+        --radius: 12px;
+        --radius-sm: 8px;
+    }
+
+    /* Reset & Base */
+    .quotation-create-page {
+        padding: 0;
+        min-height: 100vh;
+        background: var(--light);
+        position: relative;
+    }
+
+    /* Page Header */
+    .page-header {
+        background: white;
+        border-bottom: 1px solid var(--border);
+        padding: 1.5rem 0;
+        margin-bottom: 2rem;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.95);
+    }
+
+    .header-content {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    @media (min-width: 992px) {
+        .header-content {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+        }
+    }
+
+    .header-left {
+        flex: 1;
+    }
+
+    .breadcrumb-nav {
+        margin-bottom: 0.75rem;
+    }
+
+    .breadcrumb-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--secondary);
+        text-decoration: none;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: color 0.2s;
+    }
+
+    .breadcrumb-back:hover {
+        color: var(--primary);
+    }
+
+    .breadcrumb-back i {
+        font-size: 1rem;
+    }
+
+    .header-title h1 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--dark);
+        margin: 0 0 0.25rem 0;
+    }
+
+    .subtitle {
+        color: var(--secondary);
+        font-size: 0.95rem;
+        margin: 0;
+    }
+
+    /* Header Actions */
+    .header-right {
+        flex-shrink: 0;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.625rem 1.25rem;
+        border-radius: var(--radius-sm);
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        border: 1px solid transparent;
+    }
+
+    .btn-outline {
+        background: white;
+        border-color: var(--border);
+        color: var(--secondary);
+    }
+
+    .btn-outline:hover {
+        background: var(--light);
+        border-color: #cbd5e1;
+        color: var(--dark);
+    }
+
+    .btn-primary {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: var(--primary-dark);
+        border-color: var(--primary-dark);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .btn-primary:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
+    .btn-label {
+        display: none;
+    }
+
+    @media (min-width: 768px) {
+        .btn-label {
+            display: inline;
+        }
+    }
+
+    /* Form Container */
+    .form-container {
+        max-width: 1400px;
+        margin: 0 auto 3rem;
+        padding: 0 1.5rem;
+    }
+
+    .form-columns {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    @media (min-width: 1200px) {
+        .form-columns {
+            grid-template-columns: 1fr 400px;
+        }
+    }
+
+    .left-column {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .right-column {
+        position: relative;
+    }
+
+    /* Form Cards */
+    .form-card {
+        background: white;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-md);
+        overflow: hidden;
+        transition: box-shadow 0.2s;
+    }
+
+    .form-card:hover {
+        box-shadow: var(--shadow-lg);
+    }
+
+    .card-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1.25rem 1.5rem;
+        background: var(--light);
+        border-bottom: 1px solid var(--border);
+    }
+
+    .card-header i {
+        color: var(--primary);
+        font-size: 1.25rem;
+    }
+
+    .card-header h3 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--dark);
+        margin: 0;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    /* Form Grid */
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+
+    @media (min-width: 768px) {
+        .form-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    .full-width {
+        grid-column: 1 / -1;
+    }
+
+    /* Form Controls */
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+
+    .form-group:last-child {
+        margin-bottom: 0;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .required {
+        color: var(--danger);
+        margin-left: 0.25rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-size: 0.875rem;
+        color: var(--dark);
+        background: white;
+        transition: all 0.2s;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    }
+
+    .form-control.is-invalid {
+        border-color: var(--danger);
+    }
+
+    .form-control.is-invalid:focus {
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+
+    /* Select Wrapper */
+    .select-wrapper {
+        position: relative;
+    }
+
+    .select-wrapper .form-select {
+        appearance: none;
+        padding-right: 2.5rem;
+        background: white;
+    }
+
+    .select-icon {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--secondary);
+        pointer-events: none;
+        font-size: 0.875rem;
+    }
+
+    /* Date Input */
+    .date-input-wrapper {
+        position: relative;
+    }
+
+    .date-icon {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--secondary);
+        pointer-events: none;
+    }
+
+    /* Textarea Wrapper */
+    .textarea-wrapper {
+        position: relative;
+    }
+
+    .char-count {
+        position: absolute;
+        bottom: 0.5rem;
+        right: 1rem;
+        font-size: 0.75rem;
+        color: var(--secondary);
+        background: white;
+        padding: 0.125rem 0.5rem;
+        border-radius: 10px;
+    }
+
+    .form-hint {
+        font-size: 0.75rem;
+        color: var(--secondary);
+        margin-top: 0.5rem;
+    }
+
+    /* Invalid Feedback */
+    .invalid-feedback {
+        display: none;
+        width: 100%;
+        margin-top: 0.25rem;
+        font-size: 0.875rem;
+        color: var(--danger);
+    }
+
+    .was-validated .form-control:invalid~.invalid-feedback {
+        display: block;
+    }
+
+    /* Items Table */
+    .table-container {
+        position: relative;
+        overflow: hidden;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+        max-height: 500px;
+        overflow-y: auto;
+    }
+
+    .items-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        min-width: 800px;
+    }
+
+    .items-table thead {
+        background: var(--light);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .items-table th {
+        padding: 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--secondary);
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+    }
+
+    .items-table th.item-col {
+        width: 40%;
+        min-width: 250px;
+    }
+
+    .items-table th.qty-col,
+    .items-table th.rate-col,
+    .items-table th.tax-col {
+        width: 15%;
+        min-width: 80px;
+    }
+
+    .items-table th.amount-col {
+        width: 15%;
+        min-width: 100px;
+    }
+
+    .items-table th.action-col {
+        width: 5%;
+        min-width: 40px;
+    }
+
+    .items-table tbody tr {
+        border-bottom: 1px solid var(--border-light);
+        transition: background 0.2s;
+    }
+
+    .items-table tbody tr:hover {
+        background: var(--primary-light);
+    }
+
+    .items-table td {
+        padding: 1rem;
+        vertical-align: middle;
+    }
+
+    .items-table td:first-child {
+        padding-left: 1.5rem;
+    }
+
+    .items-table td:last-child {
+        padding-right: 1.5rem;
+    }
+
+    /* Table Cell Inputs */
+    .items-table .form-control {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        height: 38px;
+        border-radius: 6px;
+    }
+
+    .items-table .form-select {
+        height: 38px;
+        padding: 0.5rem 2rem 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        border-radius: 6px;
+    }
+
+    /* Item Select Cell */
+    .item-select-cell {
+        position: relative;
+    }
+
+    .item-select-wrapper {
+        position: relative;
+    }
+
+    .item-select-wrapper .form-select {
+        padding-right: 2rem;
+        background: white;
+    }
+
+    .item-select-wrapper .select-icon {
+        right: 0.75rem;
+        font-size: 0.75rem;
+    }
+
+    /* Amount Display */
+    .amount-display {
+        font-weight: 600;
+        color: var(--dark);
+        font-size: 0.875rem;
+    }
+
+    /* Delete Button */
+    .delete-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: white;
+        color: var(--secondary);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .delete-btn:hover {
+        background: var(--danger);
+        border-color: var(--danger);
+        color: white;
+    }
+
+    .delete-btn.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    /* Table Footer */
+    .table-footer {
+        padding: 1rem 1.5rem;
+        background: var(--light);
+        border-top: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .error-message {
+        color: var(--danger);
+        font-size: 0.875rem;
+        display: none;
+    }
+
+    .error-message.show {
+        display: inline;
+    }
+
+    /* Loading State */
+    .empty-state {
+        text-align: center;
+    }
+
+    .loading-indicator {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        padding: 2rem;
+        color: var(--secondary);
+    }
+
+    .spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid var(--primary-light);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Summary Card */
+    .sticky-card {
+        position: sticky;
+        top: calc(100px + 1.5rem);
+    }
+
+    .summary-card .card-body {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .summary-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+    }
+
+    .summary-label {
+        font-size: 0.875rem;
+        color: var(--secondary);
+    }
+
+    .summary-value {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--dark);
+    }
+
+    .summary-divider {
+        height: 1px;
+        background: var(--border);
+        margin: 0.5rem 0;
+    }
+
+    .grand-total .summary-label {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--dark);
+    }
+
+    .grand-total .summary-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--primary);
+    }
+
+    .summary-actions {
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
+    }
+
+    .btn-block {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Modal Styling */
+    .modal-content {
+        border: none;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .modal-header {
+        padding: 1.5rem 1.5rem 1rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .modal-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .modal-title i {
+        color: var(--primary);
+        font-size: 1.25rem;
+    }
+
+    .modal-title h5 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--dark);
+        margin: 0;
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+
+    /* Item Search */
+    .search-wrapper {
+        position: relative;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--secondary);
+        z-index: 2;
+    }
+
+    .search-input {
+        padding-left: 2.75rem;
+        height: 48px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: white;
+        font-size: 0.875rem;
+    }
+
+    .search-input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        outline: none;
+    }
+
+    /* Items List */
+    .items-list {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .item-card {
+        padding: 1rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: white;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .item-card:hover {
+        background: var(--primary-light);
+        border-color: var(--primary);
+        transform: translateY(-1px);
+    }
+
+    .item-card.selected {
+        background: var(--primary-light);
+        border-color: var(--primary);
+    }
+
+    .item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.5rem;
+    }
+
+    .item-name {
+        font-weight: 600;
+        color: var(--dark);
+        font-size: 0.95rem;
+        margin: 0;
+    }
+
+    .item-sku {
+        font-size: 0.75rem;
+        color: var(--secondary);
+        background: var(--light);
+        padding: 0.125rem 0.5rem;
+        border-radius: 10px;
+    }
+
+    .item-details {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    .item-detail {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .detail-label {
+        color: var(--secondary);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .detail-value {
+        color: var(--dark);
+        font-weight: 500;
+    }
+
+    /* Toast */
+    .toast-container {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 1080;
+    }
+
+    .toast {
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        box-shadow: var(--shadow-lg);
+        max-width: 350px;
+        animation: toastSlide 0.3s ease;
+    }
+
+    @keyframes toastSlide {
+        from {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    .toast-body {
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .toast-icon {
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .toast-icon.success {
+        color: var(--success);
+    }
+
+    .toast-content {
+        flex: 1;
+    }
+
+    .toast-title {
+        font-weight: 600;
+        color: var(--dark);
+        font-size: 0.875rem;
+        margin-bottom: 0.125rem;
+    }
+
+    .toast-message {
+        font-size: 0.8125rem;
+        color: var(--secondary);
+    }
+
+    /* Mobile Optimizations */
+    @media (max-width: 767px) {
+        .page-header {
+            padding: 1rem 0;
+        }
+
+        .header-title h1 {
+            font-size: 1.5rem;
+        }
+
+        .form-container {
+            padding: 0 1rem;
+        }
+
+        .form-columns {
+            gap: 1rem;
+        }
+
+        .card-header {
+            padding: 1rem;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        .items-table {
+            font-size: 0.875rem;
+        }
+
+        .items-table th,
+        .items-table td {
+            padding: 0.75rem 0.5rem;
+        }
+
+        .items-table .form-control,
+        .items-table .form-select {
+            padding: 0.375rem 0.5rem;
+            font-size: 0.8125rem;
+            height: 34px;
+        }
+
+        .table-footer {
+            padding: 0.75rem 1rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+        }
+
+        .btn-label {
+            display: inline;
+        }
+
+        .header-right .btn-label {
+            display: none;
+        }
+    }
+
+    @media (max-width: 575px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .items-table {
+            min-width: 600px;
+        }
+
+        .summary-card {
+            position: static;
+        }
+
+        .header-content {
+            padding: 0 1rem;
+        }
+
+        .form-container {
+            padding: 0 0.75rem;
+        }
+
+        .modal-dialog {
+            margin: 0.5rem;
+        }
+
+        .modal-content {
+            margin: 0;
+        }
+    }
+
+    /* Custom Select Dropdown Styling */
+    .form-select {
+        appearance: none;
+        background-image: none !important;
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 16px 12px;
+    }
+
+    .form-select:focus {
+        background-image: none !important;
+    }
+
+    /* Number Input Spinners */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+        opacity: 1;
+        height: 24px;
+    }
+
+    /* Focus States for Accessibility */
+    .form-control:focus-visible,
+    .form-select:focus-visible {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+    }
+
+    /* Print Styles */
+    @media print {
+
+        .page-header,
+        .header-right,
+        .table-footer,
+        .summary-actions {
+            display: none !important;
+        }
+
+        .form-container {
+            margin: 0;
+            padding: 0;
+        }
+
+        .form-card {
+            box-shadow: none !important;
+            border: 1px solid #ddd !important;
+            page-break-inside: avoid;
+        }
+
+        .items-table {
+            min-width: auto !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Robust API URL
+    const APP_API_URL = (typeof API_URL !== 'undefined') ? API_URL : window.location.origin + '/api';
+
+    // URL Parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const quoteIdFromTemplate = "{{ quote_id or '' }}";
+    const quoteId = quoteIdFromTemplate || urlParams.get('id');
+
+    // Global state
+    let inventoryItems = [];
+    let customers = [];
+    let rowCount = 0;
+    let currentItemModalRowId = null;
+
+    const state = {
+        isSubmitting: false,
+        isEditMode: !!quoteId,
+        quoteId: quoteId
+    };
+
+    // Initialize Bootstrap modal
+    let itemSelectModal = null;
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Initialize Bootstrap modal
+        const modalElement = document.getElementById('itemSelectModal');
+        if (modalElement) {
+            itemSelectModal = new bootstrap.Modal(modalElement, {
+                backdrop: true,
+                keyboard: true,
+                focus: true
+            });
+        }
+
+        // Load initial data
+        await Promise.all([loadCustomers(), loadInventoryItems()]);
+
+        // Initialize form
+        await initForm();
+
+        // Initialize character counters
+        initCharacterCounters();
+
+        // Set default valid until date (30 days from now)
+        setDefaultValidUntil();
+
+        // Add event listeners
+        setupEventListeners();
+    });
+
+    // Load customers
+    async function loadCustomers() {
+        const select = document.getElementById('customerSelect');
+        try {
+            const response = await axios.get(`${APP_API_URL}/customers/`);
+            customers = response.data || [];
+
+            if (customers.length === 0) {
+                select.innerHTML = '<option value="">No customers found. Please create a customer first.</option>';
+                return;
+            }
+
+            select.innerHTML = '<option value="">Select a customer...</option>' +
+                customers.map(c => `<option value="${c.customer_id}">${c.customer_name} ${c.customer_code ? `(${c.customer_code})` : ''}</option>`).join('');
+        } catch (error) {
+            console.error('Error loading customers:', error);
+            select.innerHTML = '<option value="">Error loading customers</option>';
+            showToast('Failed to load customers. Please check your connection.', 'danger');
+        }
+    }
+
+    // Load inventory items
+    async function loadInventoryItems() {
+        try {
+            const response = await axios.get(`${APP_API_URL}/items/`);
+            inventoryItems = response.data || [];
+
+            // Populate item select modal
+            populateItemModal();
+        } catch (error) {
+            console.error('Error loading inventory items:', error);
+            showToast('Failed to load inventory items.', 'danger');
+        }
+    }
+
+    // Populate item select modal
+    function populateItemModal() {
+        const itemsList = document.getElementById('itemsList');
+        if (!itemsList || inventoryItems.length === 0) {
+            itemsList.innerHTML = '<div class="text-center text-muted py-4">No inventory items found</div>';
+            return;
+        }
+
+        itemsList.innerHTML = inventoryItems.map(item => {
+            const price = item.selling_price || 0;
+            const tax = item.tax_rate !== undefined ? item.tax_rate : (item.tax_percent || 0);
+            const unit = item.unit || 'PCS';
+            const sku = item.sku || 'N/A';
+            const stock = item.stock_quantity || 0;
+            const hsn = item.hsn_code || 'N/A';
+
+            return `
+                <div class="item-card" data-item-id="${item.item_id}" 
+                     data-item-name="${item.item_name}"
+                     data-rate="${price}"
+                     data-tax="${tax}"
+                     data-unit="${unit}"
+                     onclick="selectItem(this)">
+                    <div class="item-header">
+                        <h4 class="item-name">${item.item_name}</h4>
+                        <span class="item-sku">${sku}</span>
+                    </div>
+                    <div class="item-details">
+                        <div class="item-detail">
+                            <span class="detail-label">Price</span>
+                            <span class="detail-value">₹ ${formatNumber(price)}</span>
+                        </div>
+                        <div class="item-detail">
+                            <span class="detail-label">Tax Rate</span>
+                            <span class="detail-value">${tax}%</span>
+                        </div>
+                        <div class="item-detail">
+                            <span class="detail-label">Unit</span>
+                            <span class="detail-value">${unit}</span>
+                        </div>
+                        <div class="item-detail">
+                            <span class="detail-label">Stock</span>
+                            <span class="detail-value">${stock}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Search items in modal
+    function setupItemSearch() {
+        const searchInput = document.getElementById('itemSearch');
+        if (!searchInput) return;
+
+        searchInput.addEventListener('input', function (e) {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            const itemCards = document.querySelectorAll('.item-card');
+
+            itemCards.forEach(card => {
+                const itemName = card.dataset.itemName.toLowerCase();
+                const sku = card.querySelector('.item-sku').textContent.toLowerCase();
+
+                if (itemName.includes(searchTerm) || sku.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    }
+
+    // Select item from modal
+    function selectItem(card) {
+        if (!currentItemModalRowId) return;
+
+        const row = document.getElementById(`row-${currentItemModalRowId}`);
+        if (!row) return;
+
+        const itemId = card.dataset.itemId;
+        const itemName = card.dataset.itemName;
+        const rate = card.dataset.rate;
+        const tax = card.dataset.tax;
+        const unit = card.dataset.unit;
+
+        // Update row fields
+        const select = row.querySelector('.item-select');
+        const rateInput = row.querySelector('.rate-input');
+        const taxInput = row.querySelector('.tax-input');
+        const itemIdInput = row.querySelector('.item-id-hidden');
+        const itemNameInput = row.querySelector('.item-name-hidden');
+        const itemUnitInput = row.querySelector('.item-unit-hidden');
+
+        // Update select
+        select.value = itemId;
+
+        // Update hidden fields
+        itemIdInput.value = itemId;
+        itemNameInput.value = itemName;
+        itemUnitInput.value = unit;
+
+        // Update visible inputs
+        rateInput.value = rate;
+        taxInput.value = tax;
+
+        // Calculate row totals
+        calculateRow(currentItemModalRowId);
+        calculateTotals();
+
+        // Close modal
+        if (itemSelectModal) {
+            itemSelectModal.hide();
+        }
+
+        // Clear selection
+        currentItemModalRowId = null;
+
+        // Remove selected class from all cards
+        document.querySelectorAll('.item-card').forEach(c => c.classList.remove('selected'));
+
+        // Add selected class to current card
+        card.classList.add('selected');
+    }
+
+    // Initialize form
+    async function initForm() {
+        // Add first row
+        addRow();
+
+        if (state.isEditMode) {
+            await loadQuotationData();
+            document.querySelector('h1').textContent = 'Edit Quotation';
+            document.querySelectorAll('#submitBtnText, #submitBtnMobile span').forEach(el => {
+                el.textContent = 'Update Quotation';
+            });
+        }
+
+        // Setup item search
+        setupItemSearch();
+    }
+
+    // Load quotation data for editing
+    async function loadQuotationData() {
+        try {
+            const response = await axios.get(`${APP_API_URL}/quotations/${state.quoteId}`);
+            const quote = response.data;
+
+            // Customer
+            document.getElementById('customerSelect').value = quote.customer_id;
+
+            // Dates
+            if (quote.valid_until) {
+                const validDate = new Date(quote.valid_until);
+                document.getElementById('validUntil').value = validDate.toISOString().split('T')[0];
+            }
+
+            // Notes & Terms
+            document.getElementById('notes').value = quote.notes || '';
+            document.getElementById('termsConditions').value = quote.terms_conditions || '';
+
+            // Items
+            const tbody = document.getElementById('itemsBody');
+            tbody.innerHTML = '';
+            rowCount = 0;
+
+            if (quote.items && quote.items.length > 0) {
+                quote.items.forEach(item => {
+                    addRow();
+                    const currentRowId = rowCount;
+                    const row = document.getElementById(`row-${currentRowId}`);
+
+                    // Set item select
+                    const select = row.querySelector('.item-select');
+                    select.value = item.item_id;
+
+                    // Set hidden fields
+                    row.querySelector('.item-id-hidden').value = item.item_id;
+                    row.querySelector('.item-name-hidden').value = item.item_name;
+                    row.querySelector('.item-unit-hidden').value = item.unit || 'PCS';
+
+                    // Set inputs
+                    row.querySelector('.qty-input').value = item.qty;
+                    row.querySelector('.rate-input').value = item.rate;
+                    row.querySelector('.tax-input').value = item.tax_percent;
+
+                    calculateRow(currentRowId);
+                });
+            }
+
+            calculateTotals();
+            updateDeleteButtons();
+
+        } catch (error) {
+            console.error('Error loading quotation data:', error);
+            showToast('Failed to load quotation data for editing.', 'danger');
+        }
+    }
+
+    // Add new row
+    function addRow() {
+        rowCount++;
+        const tbody = document.getElementById('itemsBody');
+
+        // Remove empty state if present
+        const emptyState = tbody.querySelector('.empty-state');
+        if (emptyState) {
+            emptyState.remove();
+        }
+
+        const tr = document.createElement('tr');
+        tr.id = `row-${rowCount}`;
+
+        tr.innerHTML = `
+            <td class="item-col">
+                <div class="item-select-cell">
+                    <div class="item-select-wrapper">
+                        <select class="form-select item-select" onchange="onItemSelect(this, ${rowCount})" required>
+                            <option value="">Select item...</option>
+                            ${getItemOptions()}
+                        </select>
+                        <i class="bi bi-chevron-down select-icon"></i>
+                    </div>
+                    <input type="hidden" class="item-id-hidden" name="items[${rowCount}][item_id]">
+                    <input type="hidden" class="item-name-hidden" name="items[${rowCount}][item_name]">
+                    <input type="hidden" class="item-unit-hidden" name="items[${rowCount}][unit]">
+                    <div class="invalid-feedback">Please select an item</div>
+                </div>
+            </td>
+            <td class="qty-col">
+                <input type="number" class="form-control qty-input" name="items[${rowCount}][qty]" 
+                    value="1" min="0.01" step="any" oninput="calculateRow(${rowCount}); calculateTotals()" required>
+            </td>
+            <td class="rate-col">
+                <input type="number" class="form-control rate-input" name="items[${rowCount}][rate]" 
+                    step="0.01" oninput="calculateRow(${rowCount}); calculateTotals()" required>
+            </td>
+            <td class="tax-col">
+                <input type="number" class="form-control tax-input" name="items[${rowCount}][tax_percent]" 
+                    value="18" step="0.01" min="0" max="100" oninput="calculateRow(${rowCount}); calculateTotals()" required>
+            </td>
+            <td class="amount-col text-end">
+                <span class="amount-display" id="row-total-${rowCount}">₹ 0.00</span>
+            </td>
+            <td class="action-col">
+                <button type="button" class="delete-btn" onclick="removeRow(${rowCount})" title="Remove item">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        `;
+
+        tbody.appendChild(tr);
+        updateDeleteButtons();
+
+        // Initialize row calculation
+        calculateRow(rowCount);
+        calculateTotals();
+    }
+
+    // Get item options for select
+    function getItemOptions() {
+        if (inventoryItems.length === 0) {
+            return '<option value="">No items available</option>';
+        }
+
+        return inventoryItems.map(item => {
+            const price = item.selling_price || 0;
+            const tax = item.tax_rate !== undefined ? item.tax_rate : (item.tax_percent || 0);
+            const unit = item.unit || 'PCS';
+            const sku = item.sku ? ` (${item.sku})` : '';
+
+            return `<option value="${item.item_id}" 
+                data-rate="${price}" 
+                data-tax="${tax}" 
+                data-unit="${unit}">
+                ${item.item_name}${sku} - ₹${formatNumber(price)}
+            </option>`;
+        }).join('');
+    }
+
+    // Handle item selection
+    function onItemSelect(select, rowId) {
+        const option = select.options[select.selectedIndex];
+        const row = document.getElementById(`row-${rowId}`);
+
+        if (!option.value) {
+            resetRow(rowId);
+            return;
+        }
+
+        const rate = option.dataset.rate;
+        const tax = option.dataset.tax;
+        const unit = option.dataset.unit;
+        const itemName = option.text.split(' - ')[0].trim();
+
+        // Update inputs
+        row.querySelector('.rate-input').value = rate;
+        row.querySelector('.tax-input').value = tax;
+
+        // Update hidden fields
+        row.querySelector('.item-id-hidden').value = option.value;
+        row.querySelector('.item-name-hidden').value = itemName;
+        row.querySelector('.item-unit-hidden').value = unit;
+
+        calculateRow(rowId);
+        calculateTotals();
+    }
+
+    // Reset row
+    function resetRow(rowId) {
+        const row = document.getElementById(`row-${rowId}`);
+
+        row.querySelector('.rate-input').value = '';
+        row.querySelector('.tax-input').value = '';
+        row.querySelector('.item-id-hidden').value = '';
+        row.querySelector('.item-name-hidden').value = '';
+        row.querySelector('.item-unit-hidden').value = '';
+
+        calculateRow(rowId);
+        calculateTotals();
+    }
+
+    // Remove row
+    function removeRow(rowId) {
+        const tbody = document.getElementById('itemsBody');
+        const rows = tbody.querySelectorAll('tr');
+
+        if (rows.length <= 1) {
+            showToast('Cannot remove the last item row', 'warning');
+            return;
+        }
+
+        document.getElementById(`row-${rowId}`).remove();
+        calculateTotals();
+        updateDeleteButtons();
+
+        // Add empty state if no rows left
+        if (tbody.children.length === 0) {
+            tbody.innerHTML = `
+                <tr class="empty-state">
+                    <td colspan="6" class="text-center py-4">
+                        <div class="text-muted">No items added</div>
+                    </td>
+                </tr>
+            `;
+        }
+    }
+
+    // Update delete buttons state
+    function updateDeleteButtons() {
+        const tbody = document.getElementById('itemsBody');
+        const rows = tbody.querySelectorAll('tr');
+        const deleteButtons = tbody.querySelectorAll('.delete-btn');
+
+        deleteButtons.forEach(btn => {
+            if (rows.length <= 1) {
+                btn.classList.add('disabled');
+            } else {
+                btn.classList.remove('disabled');
+            }
+        });
+    }
+
+    // Calculate row total
+    function calculateRow(rowId) {
+        const row = document.getElementById(`row-${rowId}`);
+        if (!row) return;
+
+        const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
+        const rate = parseFloat(row.querySelector('.rate-input').value) || 0;
+        const taxPercent = parseFloat(row.querySelector('.tax-input').value) || 0;
+
+        const amount = qty * rate;
+        const taxAmount = amount * (taxPercent / 100);
+        const total = amount + taxAmount;
+
+        document.getElementById(`row-total-${rowId}`).textContent = formatCurrency(total);
+    }
+
+    // Calculate totals
+    function calculateTotals() {
+        let subtotal = 0;
+        let totalTax = 0;
+
+        document.querySelectorAll('#itemsBody tr').forEach(tr => {
+            const qty = parseFloat(tr.querySelector('.qty-input').value) || 0;
+            const rate = parseFloat(tr.querySelector('.rate-input').value) || 0;
+            const taxPercent = parseFloat(tr.querySelector('.tax-input').value) || 0;
+
+            const amount = qty * rate;
+            const taxAmount = amount * (taxPercent / 100);
+
+            subtotal += amount;
+            totalTax += taxAmount;
+        });
+
+        const grandTotal = subtotal + totalTax;
+
+        document.getElementById('displaySubTotal').textContent = formatCurrency(subtotal);
+        document.getElementById('displayTax').textContent = formatCurrency(totalTax);
+        document.getElementById('displayGrandTotal').textContent = formatCurrency(grandTotal);
+    }
+
+    // Format currency
+    function formatCurrency(amount) {
+        return '₹ ' + formatNumber(amount);
+    }
+
+    // Format number
+    function formatNumber(num) {
+        return parseFloat(num).toLocaleString('en-IN', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+
+    // Initialize character counters
+    function initCharacterCounters() {
+        const notesTextarea = document.getElementById('notes');
+        const termsTextarea = document.getElementById('termsConditions');
+
+        if (notesTextarea) {
+            notesTextarea.addEventListener('input', function () {
+                document.getElementById('notesCount').textContent = this.value.length;
+            });
+            document.getElementById('notesCount').textContent = notesTextarea.value.length;
+        }
+
+        if (termsTextarea) {
+            termsTextarea.addEventListener('input', function () {
+                document.getElementById('termsCount').textContent = this.value.length;
+            });
+            document.getElementById('termsCount').textContent = termsTextarea.value.length;
+        }
+    }
+
+    // Set default valid until date
+    function setDefaultValidUntil() {
+        const dateInput = document.getElementById('validUntil');
+        if (dateInput && !dateInput.value && !state.isEditMode) {
+            const date = new Date();
+            date.setDate(date.getDate() + 30);
+            dateInput.valueAsDate = date;
+        }
+    }
+
+    // Setup event listeners
+    function setupEventListeners() {
+        // Add row button
+        document.getElementById('addRow').addEventListener('click', addRow);
+
+        // Form submission
+        const form = document.getElementById('quoteForm');
+        if (form) {
+            form.addEventListener('submit', handleSubmit);
+        }
+
+        // Validate form on input
+        const inputs = form.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            input.addEventListener('blur', () => validateField(input));
+        });
+    }
+
+    // Validate field
+    function validateField(field) {
+        if (!field.checkValidity()) {
+            field.classList.add('is-invalid');
+        } else {
+            field.classList.remove('is-invalid');
+        }
+    }
+
+    // Handle form submission
+    async function handleSubmit(e) {
+        e.preventDefault();
+
+        if (state.isSubmitting) return;
+
+        const form = e.target;
+
+        // Validate form
+        if (!form.checkValidity()) {
+            e.stopPropagation();
+            form.classList.add('was-validated');
+
+            // Scroll to first invalid field
+            const firstInvalid = form.querySelector('.is-invalid');
+            if (firstInvalid) {
+                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                firstInvalid.focus();
+            }
+
+            return;
+        }
+
+        // Validate items
+        const items = collectItems();
+        if (items.length === 0) {
+            document.getElementById('itemsError').classList.add('show');
+            showToast('Please add at least one item', 'danger');
+            return;
+        }
+        document.getElementById('itemsError').classList.remove('show');
+
+        // Get customer info
+        const customerSelect = document.getElementById('customerSelect');
+        const customerId = customerSelect.value;
+        let customerName = customerSelect.options[customerSelect.selectedIndex].text;
+
+        // Clean customer name
+        if (customerName.includes('(')) {
+            customerName = customerName.substring(0, customerName.lastIndexOf('(')).trim();
+        }
+
+        // Calculate totals
+        const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
+        const totalTax = items.reduce((sum, item) => sum + item.tax_amount, 0);
+        const grandTotal = subtotal + totalTax;
+
+        // Prepare payload
+        const payload = {
+            customer_id: customerId,
+            customer_name: customerName,
+            valid_until: document.getElementById('validUntil').value || null,
+            items: items,
+            sub_total: subtotal,
+            total_tax: totalTax,
+            grand_total: grandTotal,
+            notes: document.getElementById('notes').value,
+            terms_conditions: document.getElementById('termsConditions').value,
+            status: "draft"
+        };
+
+        // Submit
+        state.isSubmitting = true;
+        const submitBtn = document.getElementById('submitBtn');
+        const submitBtnMobile = document.getElementById('submitBtnMobile');
+        const originalBtnText = submitBtn.innerHTML;
+        const originalBtnTextMobile = submitBtnMobile.innerHTML;
+
+        submitBtn.disabled = true;
+        submitBtnMobile.disabled = true;
+        submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> ${state.isEditMode ? 'Updating...' : 'Creating...'}`;
+        submitBtnMobile.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> ${state.isEditMode ? 'Updating...' : 'Creating...'}`;
+
+        try {
+            let response;
+            if (state.isEditMode) {
+                response = await axios.put(`${APP_API_URL}/quotations/${state.quoteId}`, payload);
+            } else {
+                response = await axios.post(`${APP_API_URL}/quotations/`, payload);
+            }
+
+            showToast(`Quotation ${state.isEditMode ? 'updated' : 'created'} successfully!`, 'success');
+
+            // Redirect after delay
+            setTimeout(() => {
+                window.location.href = '/quotations';
+            }, 1500);
+
+        } catch (error) {
+            console.error('Submission error:', error);
+
+            let errorMessage = 'Failed to save quotation';
+            if (error.response) {
+                if (error.response.status === 400) {
+                    errorMessage = error.response.data.detail || 'Invalid data provided';
+                } else if (error.response.status === 404) {
+                    errorMessage = 'Quotation not found';
+                } else if (error.response.status === 500) {
+                    errorMessage = 'Server error occurred';
+                }
+            }
+
+            showToast(errorMessage, 'danger');
+
+            // Reset button states
+            submitBtn.disabled = false;
+            submitBtnMobile.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+            submitBtnMobile.innerHTML = originalBtnTextMobile;
+            state.isSubmitting = false;
+        }
+    }
+
+    // Collect items from form
+    function collectItems() {
+        const items = [];
+
+        document.querySelectorAll('#itemsBody tr').forEach(tr => {
+            const itemId = tr.querySelector('.item-id-hidden').value;
+            const itemName = tr.querySelector('.item-name-hidden').value;
+            const unit = tr.querySelector('.item-unit-hidden').value;
+
+            const qty = parseFloat(tr.querySelector('.qty-input').value) || 0;
+            const rate = parseFloat(tr.querySelector('.rate-input').value) || 0;
+            const taxPercent = parseFloat(tr.querySelector('.tax-input').value) || 0;
+
+            if (!itemId || qty <= 0 || rate <= 0) {
+                return; // Skip invalid rows
+            }
+
+            const amount = qty * rate;
+            const taxAmount = amount * (taxPercent / 100);
+
+            items.push({
+                item_id: itemId,
+                item_name: itemName,
+                qty: qty,
+                unit: unit || 'PCS',
+                rate: rate,
+                tax_percent: taxPercent,
+                discount_percent: 0,
+                amount: amount,
+                tax_amount: taxAmount,
+                total: amount + taxAmount
+            });
+        });
+
+        return items;
+    }
+
+    // Show toast notification
+    function showToast(message, type = 'success') {
+        const toastContainer = document.getElementById('toastContainer');
+        if (!toastContainer) return;
+
+        const toast = toastContainer.querySelector('.toast');
+        const toastBody = toast.querySelector('.toast-body');
+
+        // Update content
+        const icon = toastBody.querySelector('.toast-icon');
+        const title = toastBody.querySelector('.toast-title');
+        const messageEl = toastBody.querySelector('.toast-message');
+
+        title.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+        messageEl.textContent = message;
+
+        // Update icon
+        if (type === 'success') {
+            icon.className = 'bi bi-check-circle-fill toast-icon success';
+            icon.style.color = '#10b981';
+        } else if (type === 'warning') {
+            icon.className = 'bi bi-exclamation-triangle-fill toast-icon warning';
+            icon.style.color = '#f59e0b';
+        } else if (type === 'danger') {
+            icon.className = 'bi bi-x-circle-fill toast-icon danger';
+            icon.style.color = '#ef4444';
+        }
+
+        // Show toast
+        toast.classList.add('show');
+
+        // Auto-hide
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 5000);
+
+        // Close button
+        const closeBtn = toastBody.querySelector('.btn-close');
+        closeBtn.onclick = () => toast.classList.remove('show');
+    }
+</script>
+{% endblock %}

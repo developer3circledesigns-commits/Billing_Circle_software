@@ -1,0 +1,160 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}View Vendor Payment | Billing Circle{% endblock %}
+
+{% block dashboard_content %}
+<div class="row mb-4 align-items-center d-print-none">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 small">
+                <li class="breadcrumb-item"><a href="/vendor-payments">Vendor Payments</a></li>
+                <li class="breadcrumb-item active">View Payment</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-1">Payment Details</h1>
+        <p class="text-muted mb-0">Review payment record and reference information.</p>
+    </div>
+    <div class="col-auto">
+        <div class="d-flex gap-2">
+            <a href="/vendor-payments" class="btn btn-outline-secondary px-4">
+                <i class="bi bi-arrow-left me-2"></i>Back
+            </a>
+            <button class="btn btn-outline-primary px-4" onclick="window.print()">
+                <i class="bi bi-printer me-2"></i>Print
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0" id="printableArea">
+    <div class="card-body p-5">
+        <!-- Header -->
+        <div class="row mb-5">
+            <div class="col-6">
+                <div class="h3 fw-bold text-primary mb-1">Payment Receipt</div>
+                <div class="text-muted small">Billing Circle SaaS</div>
+            </div>
+            <div class="col-6 text-end">
+                <div class="h4 text-uppercase text-muted fw-light mb-1">Voucher</div>
+                <div class="fw-bold fs-5" id="pNumber">Loading...</div>
+            </div>
+        </div>
+
+        <hr class="my-5 opacity-25">
+
+        <!-- Info -->
+        <div class="row mb-5">
+            <div class="col-6">
+                <div class="small text-muted text-uppercase fw-bold mb-2">Paid To:</div>
+                <div class="h5 fw-bold mb-1" id="pWeaver">Loading...</div>
+                <div id="pWeaverContact" class="small text-muted"></div>
+            </div>
+            <div class="col-6 text-end">
+                <table class="table table-sm table-borderless text-end">
+                    <tbody>
+                        <tr>
+                            <td class="text-muted">Payment Date:</td>
+                            <td class="fw-bold" id="pDate">---</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Payment Mode:</td>
+                            <td class="fw-bold text-capitalize" id="pMode">---</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Reference:</td>
+                            <td class="fw-bold" id="pRef">---</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Amount Box -->
+        <div class="bg-light p-4 rounded-3 mb-5 text-center">
+            <div class="text-muted small text-uppercase fw-bold mb-1">Amount Paid</div>
+            <div class="display-5 fw-bold text-primary" id="pAmount">₹ 0.00</div>
+        </div>
+
+        <!-- Details -->
+        <div class="row mb-5">
+            <div class="col-md-12">
+                <table class="table table-borderless">
+                    <tbody>
+                        <tr class="border-bottom">
+                            <td class="py-3 text-muted" style="width: 200px;">Linked Bill:</td>
+                            <td class="py-3 fw-bold" id="pBill">---</td>
+                        </tr>
+                        <tr class="border-bottom">
+                            <td class="py-3 text-muted">Notes:</td>
+                            <td class="py-3" id="pNotes"><em>No notes provided.</em></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-5 pt-5 border-top small text-muted text-center">
+            <div>This is a computer-generated payment voucher and does not require a signature.</div>
+            <div class="mt-2" id="pGeneratedInfo">Generated on ---</div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media print {
+        body {
+            background: white !important;
+        }
+
+        #sidebar,
+        .navbar,
+        .d-print-none {
+            display: none !important;
+        }
+
+        .main-content {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+        }
+
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const paymentId = "{{ payment_id }}";
+    const APP_API_URL = (typeof API_URL !== 'undefined') ? API_URL : window.location.origin + '/api';
+
+    async function loadPayment() {
+        if (!paymentId) return;
+        try {
+            const resp = await axios.get(`${APP_API_URL}/vendor-payments/${paymentId}`);
+            const p = resp.data;
+
+            document.getElementById('pNumber').textContent = p.payment_number;
+            document.getElementById('pWeaver').textContent = p.weaver_name;
+            document.getElementById('pDate').textContent = new Date(p.payment_date).toLocaleDateString('en-IN', {
+                year: 'numeric', month: 'long', day: 'numeric'
+            });
+            document.getElementById('pMode').textContent = p.payment_mode.replace('_', ' ');
+            document.getElementById('pRef').textContent = p.reference_number || 'N/A';
+            document.getElementById('pAmount').textContent = `₹ ${parseFloat(p.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+            document.getElementById('pBill').textContent = p.bill_number ? `Bill #${p.bill_number}` : 'General Payment';
+            document.getElementById('pNotes').textContent = p.notes || 'No notes provided.';
+            document.getElementById('pGeneratedInfo').textContent = `Generated on ${new Date().toLocaleString()}`;
+        } catch (e) {
+            console.error(e);
+            window.ui.showToast('Failed to load payment details', 'danger');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadPayment);
+</script>
+{% endblock %}

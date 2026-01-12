@@ -1,0 +1,181 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}Customer Profile - {{ customer_id }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="row mb-4 align-items-center">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 small">
+                <li class="breadcrumb-item"><a href="/customers" class="text-decoration-none">Customer Master</a></li>
+                <li class="breadcrumb-item active" id="breadcrumbName">Profile</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-0" id="profileHeading">Loading Profile...</h1>
+    </div>
+    <div class="col-auto">
+        <div class="btn-group shadow-sm">
+            <a href="/customers/edit/{{ customer_id }}" class="btn btn-white border px-3">
+                <i class="bi bi-pencil me-2"></i>Edit
+            </a>
+            <button class="btn btn-white border px-3 text-danger">
+                <i class="bi bi-slash-circle me-2"></i>Suspend
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Financials & Status -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4 text-center">
+                <div class="avatar-lg bg-primary-subtle text-primary rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center"
+                    style="width: 80px; height: 80px;">
+                    <i class="bi bi-person fs-1"></i>
+                </div>
+                <h5 class="fw-bold mb-1" id="businessName">-</h5>
+                <span class="badge bg-success-subtle text-success border border-success-soft rounded-pill px-3"
+                    id="customerStatus">ACTIVE</span>
+
+                <hr class="my-4">
+
+                <div class="row text-start g-3">
+                    <div class="col-12">
+                        <label class="text-muted smaller d-block mb-1 text-uppercase fw-bold">Outstanding
+                            Balance</label>
+                        <h3 class="fw-bold text-primary mb-0" id="currentBalance">₹ 0.00</h3>
+                    </div>
+                    <div class="col-6">
+                        <label class="text-muted smaller d-block mb-1">Credit Limit</label>
+                        <span class="fw-semibold" id="creditLimit">₹ 0.00</span>
+                    </div>
+                    <div class="col-6">
+                        <label class="text-muted smaller d-block mb-1">Credit Period</label>
+                        <span class="fw-semibold" id="creditPeriod">0 Days</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h6 class="text-muted text-uppercase small fw-bold mb-4">Payment Terms</h6>
+                <div class="p-3 bg-light rounded-3 border">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">Frequency</span>
+                        <span class="fw-bold text-uppercase" id="paymentTerms">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted small">Currency</span>
+                        <span class="fw-bold" id="currency">INR</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Identity & Addresses -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="text-muted text-uppercase small fw-bold mb-0">Contact Information</h6>
+            </div>
+            <div class="card-body p-4 pt-0">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="text-muted small d-block mb-1">Mobile / Phone</label>
+                        <span class="fw-bold" id="phoneText">-</span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small d-block mb-1">Email Address</label>
+                        <span class="fw-bold" id="emailText">-</span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small d-block mb-1">GSTIN</label>
+                        <span class="fw-bold" id="gstinText">N/A</span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small d-block mb-1">PAN Number</label>
+                        <span class="fw-bold" id="panText">N/A</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="bi bi-receipt text-primary me-2 fs-5"></i>
+                            <h6 class="text-muted text-uppercase small fw-bold mb-0">Billing Address</h6>
+                        </div>
+                        <p class="mb-0 fw-semibold text-dark lh-base" id="billingAddress">No address provided.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="bi bi-truck text-primary me-2 fs-5"></i>
+                            <h6 class="text-muted text-uppercase small fw-bold mb-0">Shipping Address</h6>
+                        </div>
+                        <p class="mb-0 fw-semibold text-dark lh-base" id="shippingAddress">No address provided.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-body p-4">
+                <h6 class="text-muted text-uppercase small fw-bold mb-3">Additional Notes</h6>
+                <p class="text-muted mb-0 italic" id="notesText">No internal notes for this customer.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const customerId = "{{ customer_id }}";
+
+    async function loadProfile() {
+        try {
+            const resp = await axios.get(`${API_URL}/customers/${customerId}`);
+            const c = resp.data;
+
+            // UI Mapping
+            document.getElementById('profileHeading').textContent = c.customer_name;
+            document.getElementById('breadcrumbName').textContent = c.customer_code;
+            document.getElementById('businessName').textContent = c.company_name || c.customer_name;
+            document.getElementById('customerStatus').textContent = c.status.toUpperCase();
+            document.getElementById('customerStatus').className = `badge ${c.status === 'active' ? 'bg-success-subtle text-success border border-success-soft' : 'bg-danger-subtle text-danger border border-danger-soft'} rounded-pill px-3`;
+
+            // Financials
+            document.getElementById('currentBalance').textContent = `₹ ${(c.current_balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+            document.getElementById('creditLimit').textContent = `₹ ${(c.credit_limit || 0).toLocaleString()}`;
+            document.getElementById('creditPeriod').textContent = `${c.credit_period_days || 0} Days`;
+            document.getElementById('paymentTerms').textContent = (c.payment_terms || 'net_15').replace('_', ' ');
+            document.getElementById('currency').textContent = c.currency || 'INR';
+
+            // Contact
+            document.getElementById('phoneText').textContent = c.contact_number;
+            document.getElementById('emailText').textContent = c.email || 'N/A';
+            document.getElementById('gstinText').textContent = c.gstin || 'N/A';
+            document.getElementById('panText').textContent = c.pan || 'N/A';
+
+            // Addresses
+            document.getElementById('billingAddress').textContent = c.billing_address || 'No billing address provided.';
+            document.getElementById('shippingAddress').textContent = c.shipping_address || 'No shipping address provided.';
+            document.getElementById('notesText').textContent = c.notes || 'No internal notes for this customer.';
+
+        } catch (e) {
+            console.error(e);
+            window.ui.showToast('Failed to load customer profile.', 'danger');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadProfile);
+</script>
+{% endblock %}

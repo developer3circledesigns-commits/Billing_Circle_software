@@ -1,0 +1,72 @@
+<nav class="navbar">
+    <div class="container-fluid">
+        <!-- Sidebar Toggle (Mobile) -->
+        <button class="btn btn-link text-primary d-lg-none me-3 p-1" id="sidebarToggleMobile"
+            aria-label="Toggle sidebar" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Menu">
+            <i class="bi bi-list fs-3"></i>
+        </button>
+        <!-- Right Side Actions -->
+        <div class="navbar-actions ms-auto">
+            <!-- Search -->
+            <div class="search-container d-none d-lg-block me-3 position-relative">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light border-0"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control bg-light border-0" placeholder="Quick search..."
+                        id="globalSearch" autocomplete="off">
+                </div>
+                <div id="searchResults" class="dropdown-menu shadow border-0 mt-1 w-100 d-none"
+                    style="max-height: 400px; overflow-y: auto;">
+                    <!-- Results injected here -->
+                </div>
+            </div>
+
+            <!-- Notifications -->
+            <div class="dropdown me-3">
+                <a class="nav-link position-relative p-2" href="#" id="notificationsDropdown" data-bs-toggle="dropdown"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Notifications">
+                    <i class="bi bi-bell fs-5 text-secondary"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                        id="notificationCount">0</span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 p-3" style="min-width: 300px;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0 fw-bold">Notifications</h6>
+                        <a href="#" class="smaller text-decoration-none">Mark all read</a>
+                    </div>
+                    <div class="notifications-list" style="max-height: 300px; overflow-y: auto;">
+                        <div class="p-3 text-center text-muted smaller">No new notifications</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Theme Toggle -->
+            <button class="btn btn-link text-secondary p-2 me-2" id="themeToggle" data-bs-toggle="tooltip"
+                data-bs-placement="bottom" title="Toggle Theme">
+                <i class="bi bi-moon fs-5" id="themeIcon"></i>
+            </button>
+
+            <!-- User Profile -->
+            <div class="dropdown">
+                <a class="nav-link d-flex align-items-center p-0" href="#" id="userDropdown" data-bs-toggle="dropdown"
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" title="Account Settings">
+                    <div class="user-avatar me-2">
+                        <img src="https://ui-avatars.com/api/?name=Admin+User&background=3b82f6&color=fff&size=64"
+                            alt="Avatar" class="rounded-circle" width="36" height="36">
+                    </div>
+                    <div class="d-none d-sm-block">
+                        <div class="fw-bold small" id="userNameNav">Admin</div>
+                        <div class="text-muted smaller" id="userRoleNav">Owner</div>
+                    </div>
+                </a>
+                <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2 p-2" style="min-width: 200px;">
+                    <a href="/profile" class="dropdown-item py-2"><i class="bi bi-person me-2"></i>My Profile</a>
+                    <a href="/settings" class="dropdown-item py-2"><i class="bi bi-gear me-2"></i>Settings</a>
+                    <div class="dropdown-divider"></div>
+                    <button class="dropdown-item py-2 text-danger" onclick="auth.logout()">
+                        <i class="bi bi-box-arrow-right me-2"></i>Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>

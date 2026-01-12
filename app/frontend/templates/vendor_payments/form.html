@@ -1,0 +1,156 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}Record Vendor Payment | Billing Circle{% endblock %}
+
+{% block dashboard_content %}
+<div class="row mb-4 align-items-center">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 small">
+                <li class="breadcrumb-item"><a href="/vendor-payments">Vendor Payments</a></li>
+                <li class="breadcrumb-item active">New Payment</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-0">Record Vendor Payment</h1>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <form id="paymentForm">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Select Weaver/Supplier</label>
+                            <select class="form-select" name="weaver_id" id="weaverSelect" required>
+                                <option value="">Loading weavers...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Link to Bill (Optional)</label>
+                            <select class="form-select" name="bill_id" id="billSelect">
+                                <option value="">General Payment (No specific bill)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Payment Date</label>
+                            <input type="date" class="form-control" name="payment_date" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Amount (₹)</label>
+                            <input type="number" class="form-control" name="amount" step="0.01" required
+                                placeholder="0.00">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Payment Mode</label>
+                            <select class="form-select" name="payment_mode" required>
+                                <option value="bank_transfer">Bank Transfer / NEFT</option>
+                                <option value="upi">UPI / GPay / PhonePe</option>
+                                <option value="cash">Cash</option>
+                                <option value="cheque">Cheque</option>
+                                <option value="card">Card</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Reference Number</label>
+                            <input type="text" class="form-control" name="reference_number"
+                                placeholder="TXN-12345 or Cheque No.">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Notes</label>
+                            <textarea class="form-control" name="notes" rows="3"
+                                placeholder="Additional details about this payment..."></textarea>
+                        </div>
+                        <div class="col-12 text-end mt-5">
+                            <hr class="mb-4">
+                            <button type="button" class="btn btn-light px-4 me-2"
+                                onclick="history.back()">Cancel</button>
+                            <button type="submit" class="btn btn-primary px-5">
+                                <i class="bi bi-check-circle me-2"></i>Record Payment
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const billIdFromUrl = "{{ bill_id or '' }}";
+    const weaverSelect = document.getElementById('weaverSelect');
+    const billSelect = document.getElementById('billSelect');
+
+    async function init() {
+        // Set today as default date
+        document.querySelector('input[name="payment_date"]').valueAsDate = new Date();
+
+        try {
+            // Load Weavers
+            const weaverResp = await axios.get(`${API_URL}/weavers/`);
+            const weavers = weaverResp.data;
+            weaverSelect.innerHTML = '<option value="">Choose a weaver...</option>' +
+                weavers.map(w => `<option value="${w.weaver_id}" data-name="${w.weaver_name}">${w.weaver_name}</option>`).join('');
+
+            // If bill_id is provided, fetch bill details and pre-select weaver
+            if (billIdFromUrl) {
+                const billResp = await axios.get(`${API_URL}/purchase-bills/${billIdFromUrl}`);
+                const bill = billResp.data;
+
+                weaverSelect.value = bill.weaver_id;
+                weaverSelect.disabled = true; // Lock weaver if coming from a specific bill
+
+                await loadBills(bill.weaver_id);
+                billSelect.value = billIdFromUrl;
+                document.querySelector('input[name="amount"]').value = bill.balance_amount;
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    async function loadBills(weaverId) {
+        if (!weaverId) {
+            billSelect.innerHTML = '<option value="">General Payment (No specific bill)</option>';
+            return;
+        }
+        try {
+            const resp = await axios.get(`${API_URL}/purchase-bills/by-weaver/${weaverId}`);
+            const bills = resp.data.filter(b => b.payment_status !== 'paid');
+            billSelect.innerHTML = '<option value="">General Payment (No specific bill)</option>' +
+                bills.map(b => `<option value="${b.bill_id}" data-number="${b.bill_number}" data-balance="${b.balance_amount}">${b.bill_number} (Bal: ₹ ${b.balance_amount.toFixed(2)})</option>`).join('');
+        } catch (e) { console.error(e); }
+    }
+
+    weaverSelect.addEventListener('change', (e) => loadBills(e.target.value));
+
+    document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const selectedWeaver = weaverSelect.options[weaverSelect.selectedIndex];
+        const selectedBill = billSelect.options[billSelect.selectedIndex];
+
+        const payload = {
+            weaver_id: weaverSelect.value,
+            weaver_name: selectedWeaver.dataset.name,
+            bill_id: billSelect.value || null,
+            bill_number: selectedBill.dataset.number || null,
+            payment_date: new Date(form.payment_date.value).toISOString(),
+            amount: parseFloat(form.amount.value),
+            payment_mode: form.payment_mode.value,
+            reference_number: form.reference_number.value,
+            notes: form.notes.value
+        };
+
+        try {
+            await axios.post(`${API_URL}/vendor-payments/`, payload);
+            window.location.href = '/vendor-payments';
+        } catch (err) {
+            window.ui.showToast('Error recording payment: ' + (err.response?.data?.detail || err.message), 'danger');
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', init);
+</script>
+{% endblock %}

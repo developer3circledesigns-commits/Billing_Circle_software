@@ -1,0 +1,437 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}Payment History | Billing Circle{% endblock %}
+
+{% block dashboard_content %}
+<div class="row mb-4 align-items-center">
+    <div class="col">
+        <h1 class="h3 fw-bold mb-1">Financial Transactions</h1>
+        <p class="text-muted mb-0">Monitor and manage all incoming receipts and outgoing vendor payments.</p>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-primary px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
+            <i class="bi bi-plus-lg me-2"></i>Record Transaction
+        </button>
+    </div>
+</div>
+
+<!-- Financial KPIs -->
+<div class="row g-4 mb-5">
+    <div class="col-12 col-md-4">
+        <div class="card p-4 border-0 shadow-sm"
+            style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-left: 4px solid #3b82f6 !important;">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h6 class="text-primary small fw-bold text-uppercase mb-2">Total Receipts</h6>
+                    <h2 class="mb-0 fw-bold" id="totalReceipts">₹ 0.00</h2>
+                </div>
+                <div class="bg-primary-subtle p-2 rounded-3">
+                    <i class="bi bi-arrow-down-left-circle text-primary fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card p-4 border-0 shadow-sm"
+            style="background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border-left: 4px solid #ef4444 !important;">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h6 class="text-danger small fw-bold text-uppercase mb-2">Total Payouts</h6>
+                    <h2 class="mb-0 fw-bold" id="totalPayouts">₹ 0.00</h2>
+                </div>
+                <div class="bg-danger-subtle p-2 rounded-3">
+                    <i class="bi bi-arrow-up-right-circle text-danger fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card p-4 border-0 shadow-sm"
+            style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-left: 4px solid #22c55e !important;">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h6 class="text-success small fw-bold text-uppercase mb-2">Net Cash Flow</h6>
+                    <h2 class="mb-0 fw-bold" id="netFlow">₹ 0.00</h2>
+                </div>
+                <div class="bg-success-subtle p-2 rounded-3">
+                    <i class="bi bi-bank text-success fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-4 border-0">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <select class="form-select bg-light border-0" id="filterType">
+                    <option value="">All Types</option>
+                    <option value="receive">Incoming (Receipts)</option>
+                    <option value="pay">Outgoing (Payouts)</option>
+                </select>
+            </div>
+            <div class="col-md-auto ms-auto d-flex gap-2">
+                <button class="btn btn-white border px-3" id="exportCsv" title="Export to CSV"><i
+                        class="bi bi-download"></i></button>
+                <button class="btn btn-white border px-3" onclick="loadPayments()"><i
+                        class="bi bi-arrow-clockwise"></i></button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Transaction Details</th>
+                        <th>Party & Mode</th>
+                        <th>Date & Time</th>
+                        <th>Type</th>
+                        <th class="text-end">Amount</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="paymentTableBody">
+                    <tr>
+                        <td colspan="7" class="text-center py-5">Loading transactions...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block modals %}
+<!-- Add Payment Modal -->
+<div class="modal fade" id="addPaymentModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow px-2">
+            <div class="modal-header border-0 pt-4 px-4">
+                <h5 class="fw-bold"><i class="bi bi-wallet2 me-2 text-primary"></i>Record Transaction</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addPaymentForm">
+                <div class="modal-body px-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Transaction Type</label>
+                        <select class="form-select" name="payment_type" required id="modalType">
+                            <option value="receive">Income (From Customer)</option>
+                            <option value="pay">Expense (To Weaver/Supplier)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold" id="partyLabel">Customer Name</label>
+                        <select class="form-select" name="party_id" required id="modalPartySelect">
+                            <option value="">Choose party...</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label small fw-bold">Amount (₹)</label>
+                            <input type="number" class="form-control" name="amount" required step="0.01">
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label small fw-bold">Payment Date</label>
+                            <input type="date" class="form-control" name="payment_date" id="modalPaymentDate">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label class="form-label small fw-bold">Payment Mode</label>
+                            <select class="form-select" name="payment_mode">
+                                <option value="cash">Cash</option>
+                                <option value="bank">Bank Transfer</option>
+                                <option value="upi">UPI / GPay</option>
+                                <option value="cheque">Cheque</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Reference #</label>
+                        <input type="text" class="form-control" name="reference_number"
+                            placeholder="Transaction ID, Cheque #, etc.">
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pb-4 px-4">
+                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4 shadow">Save Transaction</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- View Payment Modal -->
+<div class="modal fade" id="viewPaymentModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pt-4 px-4">
+                <h5 class="fw-bold">Transaction Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body px-4 pb-4" id="viewPaymentContent">
+                <!-- Content loaded via JS -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+    const TableBody = document.getElementById('paymentTableBody');
+    const ModalType = document.getElementById('modalType');
+    const PartySelect = document.getElementById('modalPartySelect');
+    const PartyLabel = document.getElementById('partyLabel');
+
+    let customers = [];
+    let weavers = [];
+
+    async function loadParties() {
+        try {
+            const [cR, wR] = await Promise.all([
+                axios.get(`${API_URL}/customers/`),
+                axios.get(`${API_URL}/weavers/`)
+            ]);
+            customers = cR.data;
+            weavers = wR.data;
+            updatePartyOptions();
+        } catch (e) { console.error(e); }
+    }
+
+    function updatePartyOptions() {
+        const type = ModalType.value;
+        const list = type === 'receive' ? customers : weavers;
+        PartyLabel.textContent = type === 'receive' ? 'Customer Name' : 'Weaver Name';
+
+        PartySelect.innerHTML = '<option value="">Choose party...</option>' +
+            list.map(p => `<option value="${p.customer_id || p.weaver_id}" data-name="${p.customer_name || p.weaver_name}">${p.customer_name || p.weaver_name}</option>`).join('');
+    }
+
+    ModalType.addEventListener('change', updatePartyOptions);
+
+    async function loadPayments() {
+        try {
+            const type = document.getElementById('filterType').value;
+
+            // Fetch from both endpoints to get a unified view
+            const [genPaymentsResp, vendorPaymentsResp] = await Promise.all([
+                axios.get(`${API_URL}/payments/`, { params: { payment_type: type || undefined } }),
+                axios.get(`${API_URL}/vendor-payments/`)
+            ]);
+
+            let list = genPaymentsResp.data;
+            let vendorList = vendorPaymentsResp.data;
+
+            // Map vendor payments to a common structure if needed
+            vendorList = vendorList.map(p => ({
+                ...p,
+                payment_id: p.payment_id,
+                payment_number: p.payment_number,
+                party_name: p.weaver_name,
+                payment_type: 'pay',
+                payment_date: p.payment_date,
+                amount: p.amount,
+                payment_mode: p.payment_mode,
+                reference_number: p.reference_number || (p.bill_number ? `Bill: ${p.bill_number}` : '')
+            }));
+
+            // Filter vendor list by type if "receive" is selected
+            if (type === 'receive') {
+                vendorList = [];
+            } else if (type === 'pay') {
+                // Already 'pay'
+            }
+
+            // Combine and Sort by date descending
+            list = [...list, ...vendorList].sort((a, b) => new Date(b.payment_date) - new Date(a.payment_date));
+
+            let totalIn = 0;
+            let totalOut = 0;
+            list.forEach(p => {
+                if (p.payment_type === 'receive') totalIn += p.amount;
+                else totalOut += p.amount;
+            });
+
+            document.getElementById('totalReceipts').textContent = `₹ ${totalIn.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+            document.getElementById('totalPayouts').textContent = `₹ ${totalOut.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+            document.getElementById('netFlow').textContent = `₹ ${(totalIn - totalOut).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+
+            TableBody.innerHTML = list.map(p => `
+                <tr class="align-middle">
+                    <td class="ps-4">
+                        <div class="fw-bold text-accent">${p.payment_number}</div>
+                        <div class="smaller text-muted">ID: ${p.payment_id.substring(0, 8)}...</div>
+                    </td>
+                    <td>
+                        <div class="fw-semibold text-dark font-heading">${p.party_name}</div>
+                        <div class="smaller text-muted text-uppercase">${p.payment_mode.replace('_', ' ')} • ${p.reference_number || 'NO REF'}</div>
+                    </td>
+                    <td>
+                        <div class="fw-medium">${new Date(p.payment_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+                        <div class="smaller text-muted">${new Date(p.payment_date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</div>
+                    </td>
+                    <td>
+                        <span class="badge ${p.payment_type === 'receive' ? 'bg-success-subtle text-success border border-success-soft' : 'bg-danger-subtle text-danger border border-danger-soft'} rounded-pill px-3 py-2">
+                             <i class="bi ${p.payment_type === 'receive' ? 'bi-arrow-down-left' : 'bi-arrow-up-right'} me-1"></i>
+                            ${p.payment_type === 'receive' ? 'RECEIPT' : 'PAYMENT'}
+                        </span>
+                    </td>
+                    <td class="text-end fw-bold fs-6 ${p.payment_type === 'receive' ? 'text-success' : 'text-danger'}">
+                        ${p.payment_type === 'receive' ? '+' : '-'} ₹ ${p.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </td>
+                    <td class="text-end pe-4">
+                        <div class="btn-group shadow-sm">
+                            <button class="btn btn-white btn-sm border" onclick="viewPaymentLocal('${p.payment_id}', '${p.payment_type}')" title="View Details">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="btn btn-white btn-sm border" onclick="deleteUnified('${p.payment_id}', '${p.payment_number}', '${p.payment_type}')" title="Delete Transaction">
+                                <i class="bi bi-trash text-danger"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+            if (list.length === 0) TableBody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">No transactions found matching your criteria.</td></tr>';
+        } catch (e) {
+            console.error(e);
+            TableBody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-danger">Error fetching financial history.</td></tr>';
+        }
+    }
+
+    async function deleteUnified(id, number, type) {
+        const endpoint = type === 'receive' ? 'payments' : 'vendor-payments';
+        window.ui.confirmDelete({
+            title: 'Delete Transaction',
+            message: `Are you sure you want to delete transaction ${number}? This will revert any associated balances.`,
+            onConfirm: async () => {
+                try {
+                    await axios.delete(`${API_URL}/${endpoint}/${id}`);
+                    window.ui.showToast('Transaction deleted successfully', 'success');
+                    loadPayments();
+                } catch (err) {
+                    window.ui.showToast('Failed to delete transaction', 'danger');
+                }
+            }
+        });
+    }
+
+    async function viewPaymentLocal(id, type) {
+        try {
+            const endpoint = type === 'receive' ? 'payments' : 'vendor-payments';
+            const resp = await axios.get(`${API_URL}/${endpoint}/`);
+            const p_raw = resp.data.find(x => (x.payment_id === id));
+            if (!p_raw) return;
+
+            // Normalize for view
+            const p = {
+                amount: p_raw.amount,
+                payment_number: p_raw.payment_number,
+                party_name: p_raw.customer_name || p_raw.weaver_name || (type === 'receive' ? p_raw.party_name : 'Supplier'),
+                payment_type: type,
+                payment_date: p_raw.payment_date,
+                payment_mode: p_raw.payment_mode,
+                reference_number: p_raw.reference_number || (p_raw.bill_number ? `Bill: ${p_raw.bill_number}` : 'N/A')
+            };
+
+            const content = document.getElementById('viewPaymentContent');
+            content.innerHTML = `
+                <div class="text-center mb-4">
+                    <div class="display-6 fw-bold ${p.payment_type === 'receive' ? 'text-success' : 'text-danger'}">
+                        ${p.payment_type === 'receive' ? '+' : '-'} ₹ ${p.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </div>
+                    <div class="text-muted small">Reference: ${p.payment_number}</div>
+                </div>
+                <div class="list-group list-group-flush small">
+                    <div class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Party Name</span>
+                        <span class="fw-bold">${p.party_name}</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Transaction Type</span>
+                        <span class="badge ${p.payment_type === 'receive' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'} rounded-pill">
+                            ${p.payment_type.toUpperCase()}
+                        </span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Date & Time</span>
+                        <span>${new Date(p.payment_date).toLocaleString()}</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Payment Mode</span>
+                        <span class="text-capitalize">${p.payment_mode.replace('_', ' ')}</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between px-0">
+                        <span class="text-muted">Ref / Cheque #</span>
+                        <span>${p.reference_number}</span>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <button class="btn btn-light w-100 border" data-bs-dismiss="modal">Close</button>
+                </div>
+            `;
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('viewPaymentModal')).show();
+        } catch (e) {
+            window.ui.showToast('Error loading details', 'danger');
+        }
+    }
+
+    document.getElementById('addPaymentForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const selected = PartySelect.options[PartySelect.selectedIndex];
+        const payload = {
+            payment_type: form.payment_type.value,
+            party_id: form.party_id.value,
+            party_name: selected.dataset.name,
+            amount: parseFloat(form.amount.value),
+            payment_date: form.payment_date.value ? new Date(form.payment_date.value).toISOString() : undefined,
+            payment_mode: form.payment_mode.value,
+            reference_number: form.reference_number.value,
+            notes: ""
+        };
+        try {
+            await axios.post(`${API_URL}/payments/`, payload);
+            bootstrap.Modal.getInstance(document.getElementById('addPaymentModal')).hide();
+            form.reset();
+            loadPayments();
+        } catch (err) { window.ui.showToast('Failed to save payment.', 'danger'); }
+    });
+
+    document.getElementById('filterType').addEventListener('change', loadPayments);
+
+    // Export CSV
+    document.getElementById('exportCsv').addEventListener('click', () => {
+        const rows = Array.from(document.querySelectorAll('#paymentTableBody tr'));
+        const csv = [
+            ['Ref #', 'Party', 'Date', 'Type', 'Amount', 'Mode'].join(','),
+            ...rows.map(row => {
+                const cols = row.querySelectorAll('td');
+                if (cols.length < 5) return '';
+                return [
+                    cols[0].querySelector('.text-accent').innerText,
+                    cols[1].querySelector('.fw-semibold').innerText,
+                    cols[2].querySelector('.fw-medium').innerText,
+                    cols[3].innerText.trim(),
+                    cols[4].innerText.replace(/[₹\+\-\s,]/g, ''),
+                    cols[1].querySelector('.smaller').innerText.split('•')[0].trim()
+                ].map(v => `"${v}"`).join(',');
+            }).filter(r => r !== '')
+        ].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'payments_export.csv'; a.click();
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadParties();
+        loadPayments();
+    });
+</script>
+{% endblock %}

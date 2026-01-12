@@ -1,0 +1,77 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}Application Settings | Billing Circle{% endblock %}
+
+{% block dashboard_content %}
+<div class="row mb-5 align-items-center">
+    <div class="col">
+        <h1 class="h3 fw-bold mb-1">Application Settings</h1>
+        <p class="text-muted mb-0">Configure your billing preferences and system integrations.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="list-group list-group-flush border rounded-3 p-2 bg-white shadow-sm">
+            <a href="#" class="list-group-item list-group-item-action border-0 rounded-2 active"><i
+                    class="bi bi-sliders me-2"></i>General Configuration</a>
+            <a href="#" class="list-group-item list-group-item-action border-0 rounded-2"><i
+                    class="bi bi-shield-lock me-2"></i>Security & Privacy</a>
+            <a href="#" class="list-group-item list-group-item-action border-0 rounded-2"><i
+                    class="bi bi-bell me-2"></i>Notifications</a>
+            <a href="#" class="list-group-item list-group-item-action border-0 rounded-2"><i
+                    class="bi bi-puzzle me-2"></i>Integrations</a>
+        </div>
+    </div>
+    <div class="col-md-9">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-4">Billing Defaults</h6>
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Default Currency</label>
+                        <select class="form-select">
+                            <option value="INR">Indian Rupee (₹)</option>
+                            <option value="USD">US Dollar ($)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Default Tax Rate (%)</label>
+                        <input type="number" class="form-control" value="18">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Invoice Prefix</label>
+                        <input type="text" class="form-control" value="INV-">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Default Payment Terms</label>
+                        <select class="form-select">
+                            <option>Due on Receipt</option>
+                            <option>Net 15</option>
+                            <option>Net 30</option>
+                        </select>
+                    </div>
+                </div>
+
+                <hr class="my-5">
+
+                <h6 class="fw-bold mb-4">System Preferences</h6>
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="autoInvoice" checked>
+                    <label class="form-check-label" for="autoInvoice">Auto-generate invoices on quotation
+                        acceptance</label>
+                </div>
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="stockAlerts" checked>
+                    <label class="form-check-label" for="stockAlerts">Enable real-time stock-out notifications</label>
+                </div>
+            </div>
+            <div class="card-footer bg-light border-0 text-end p-4">
+                <button class="btn btn-primary px-4"
+                    onclick="window.ui.showToast('Settings update feature coming soon!', 'info')">Update
+                    Preferences</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

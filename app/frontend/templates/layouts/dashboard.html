@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% include "includes/sidebar.html" %}
+
+<div id="main-content">
+    {% include "includes/navbar.html" %}
+
+    <main class="p-3 p-md-4 pt-5 mt-4">
+        {% block dashboard_content %}{% endblock %}
+    </main>
+</div>
+
+{% endblock %}
+
+{% block core_js %}
+<!-- UI Controller -->
+<script src="{{ url_for('static', filename='js/ui-controller.js') }}"></script>
+
+<script>
+    // Initialize Dashboard & Global State
+    document.addEventListener('DOMContentLoaded', async () => {
+        // 1. Check Auth & Fetch User/Org Data
+        try {
+            const response = await axios.get(`${API_URL}/users/me`);
+            const user = response.data;
+
+            // Update UI across all pages
+            const initials = (user.full_name || 'User').split(' ').map(n => n[0]).join('').toUpperCase();
+            document.querySelectorAll('#userInitials').forEach(el => el.textContent = initials);
+            document.querySelectorAll('#userNameNav, #userNameSidebar').forEach(el => el.textContent = user.full_name || 'Admin');
+            document.querySelectorAll('#userRoleNav').forEach(el => el.textContent = (user.role || 'OWNER').toUpperCase());
+
+            // Fetch Organization details
+            try {
+                const orgResponse = await axios.get(`${API_URL}/auth/organization`);
+                document.getElementById('orgNameText').textContent = orgResponse.data.company_name;
+            } catch (e) {
+                // Fallback handled by element's default or ui-controller
+            }
+
+        } catch (error) {
+            console.error("Session expired or invalid", error);
+            if (error.response?.status === 401) {
+                auth.logout();
+            }
+        }
+    });
+
+    // Simple entrance animation
+    if (typeof gsap !== 'undefined') {
+        gsap.from("main", { opacity: 0, y: 20, duration: 0.8, ease: "power2.out" });
+    }
+</script>
+{% endblock %}

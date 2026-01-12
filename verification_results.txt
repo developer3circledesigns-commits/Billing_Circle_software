@@ -1,0 +1,9 @@
+Collection           | Count     
+-----------------------------------
+users                | 14        
+categories           | 52        
+weavers              | 1005      
+customers            | 1001      
+items                | 1001      
+quotations           | 1000      
+invoices             | 1000      

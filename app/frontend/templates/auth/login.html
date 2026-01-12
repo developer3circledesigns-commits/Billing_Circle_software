@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Billing Circle{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="card auth-card">
+        <div class="auth-logo" id="authLogo">
+            Billing Circle
+        </div>
+        <h4 class="mb-4 text-center">Sign in</h4>
+        <form id="loginForm">
+            <div class="mb-3">
+                <label class="form-label" for="username">Email Address</label>
+                <input type="email" class="form-control" name="username" required placeholder="Enter Email Address">
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="password">Password</label>
+                <input type="password" class="form-control" name="password" required placeholder="Enter Password">
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary" id="loginBtn">Login</button>
+            </div>
+        </form>
+        <div class="mt-3 text-center">
+            <p class="text-muted">Don't have an account? <a href="/signup">Sign up</a></p>
+        </div>
+        <div id="errorAlert" class="alert alert-danger mt-3 d-none"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const errorAlert = document.getElementById('errorAlert');
+        const loginBtn = document.getElementById('loginBtn');
+        loginBtn.disabled = true;
+        loginBtn.textContent = 'Logging in...';
+        try {
+            const response = await axios.post(`${API_URL}/auth/login`, formData);
+            auth.setToken(response.data.access_token);
+            window.location.href = '/dashboard';
+        } catch (error) {
+            errorAlert.textContent = error.response?.data?.detail || 'Login failed';
+            errorAlert.classList.remove('d-none');
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Login';
+        }
+    });
+</script>
+{% endblock %}

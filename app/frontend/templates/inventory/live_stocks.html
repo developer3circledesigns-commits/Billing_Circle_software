@@ -1,0 +1,164 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}Live Stocks | Billing Circle{% endblock %}
+
+{% block dashboard_content %}
+<div class="row mb-4 mb-md-5 align-items-center">
+    <div class="col-12 col-md">
+        <h1 class="h3 fw-bold mb-1">Live Stocks</h1>
+        <p class="text-muted mb-0">Real-time inventory levels and warehouse status.</p>
+    </div>
+    <div class="col-12 col-md-auto mt-3 mt-md-0">
+        <button class="btn btn-outline-primary px-3" onclick="loadStockData()">
+            <i class="bi bi-arrow-clockwise me-2"></i>Refresh Data
+        </button>
+    </div>
+</div>
+
+<!-- Stock Matrix Cards -->
+<div class="row g-4 mb-5">
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card p-4 border-start border-danger border-4">
+            <h6 class="text-muted small fw-bold text-uppercase mb-2">Out of Stock</h6>
+            <div class="d-flex align-items-center">
+                <h2 class="mb-0 fw-bold text-danger me-2" id="outStockCount">0</h2>
+                <span class="text-muted">Items</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card p-4 border-start border-warning border-4">
+            <h6 class="text-muted small fw-bold text-uppercase mb-2">Low Stock Alerts</h6>
+            <div class="d-flex align-items-center">
+                <h2 class="mb-0 fw-bold text-warning me-2" id="lowStockCount">0</h2>
+                <span class="text-muted">Items below limit</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-md-4">
+        <div class="card p-4 border-start border-success border-4">
+            <h6 class="text-muted small fw-bold text-uppercase mb-2">Healthy Stock</h6>
+            <div class="d-flex align-items-center">
+                <h2 class="mb-0 fw-bold text-success me-2" id="goodStockCount">0</h2>
+                <span class="text-muted">Items well stocked</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="card">
+    <div class="card-header">
+        <div class="row g-3 align-items-center">
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-funnel"></i></span>
+                    <select class="form-select" id="filterStatus">
+                        <option value="all">Display All Items</option>
+                        <option value="oos">Out of Stock Only</option>
+                        <option value="low">Low Stock Only</option>
+                        <option value="good">Healthy Only</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Item Name / SKU</th>
+                        <th>Category</th>
+                        <th class="text-center">Current Qty</th>
+                        <th class="text-center">Min Limit</th>
+                        <th>Availability</th>
+                        <th class="text-end pe-4">Trend</th>
+                    </tr>
+                </thead>
+                <tbody id="stockTableBody">
+                    <tr>
+                        <td colspan="6" class="text-center py-5">Syncing with warehouse...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    async function loadStockData() {
+        const body = document.getElementById('stockTableBody');
+        const filter = document.getElementById('filterStatus').value;
+
+        try {
+            const [itemResp, catResp] = await Promise.all([
+                axios.get(`${API_URL}/items/`),
+                axios.get(`${API_URL}/categories/`)
+            ]);
+
+            const cats = {};
+            if (catResp.data && Array.isArray(catResp.data)) {
+                catResp.data.forEach(c => cats[c.category_id] = c.category_name);
+            }
+
+            let allItems = itemResp.data;
+
+            // Calculate stats
+            let oos = 0, low = 0, good = 0;
+            allItems.forEach(i => {
+                if (i.current_stock <= 0) oos++;
+                else if (i.current_stock <= i.reorder_level) low++;
+                else good++;
+            });
+
+            document.getElementById('outStockCount').textContent = oos;
+            document.getElementById('lowStockCount').textContent = low;
+            document.getElementById('goodStockCount').textContent = good;
+
+            // Apply filter
+            if (filter === 'oos') allItems = allItems.filter(i => i.current_stock <= 0);
+            else if (filter === 'low') allItems = allItems.filter(i => i.current_stock > 0 && i.current_stock <= i.reorder_level);
+            else if (filter === 'good') allItems = allItems.filter(i => i.current_stock > i.reorder_level);
+
+            body.innerHTML = allItems.map(i => {
+                const status = i.current_stock <= 0 ? 'oos' : (i.current_stock <= i.reorder_level ? 'low' : 'good');
+                return `
+                <tr class="align-middle ${status === 'oos' ? 'bg-danger-subtle bg-opacity-10' : ''}">
+                    <td class="ps-4">
+                        <div class="fw-bold">${i.item_name}</div>
+                        <div class="smaller text-muted">${i.sku || 'NO SKU'}</div>
+                    </td>
+                    <td><span class="badge bg-light text-dark">${cats[i.category_id] || 'General'}</span></td>
+                    <td class="text-center h5 mb-0 fw-bold ${status === 'oos' ? 'text-danger' : (status === 'low' ? 'text-warning' : 'text-success')}">
+                        ${i.current_stock}
+                    </td>
+                    <td class="text-center text-muted">${i.reorder_level}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle me-2" style="width: 10px; height: 10px; background-color: ${status === 'oos' ? '#ef4444' : (status === 'low' ? '#f59e0b' : '#10b981')}"></div>
+                            <span class="small fw-bold ${status === 'oos' ? 'text-danger' : (status === 'low' ? 'text-warning' : 'text-success')} uppercase">
+                                ${status === 'oos' ? 'Critical' : (status === 'low' ? 'Low Stock' : 'In Stock')}
+                            </span>
+                        </div>
+                    </td>
+                    <td class="text-end pe-4">
+                        <i class="bi bi-graph-${status === 'good' ? 'up' : 'down'} text-${status === 'good' ? 'success' : 'danger'}"></i>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+
+            if (allItems.length === 0) body.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">No items match this status.</td></tr>';
+
+        } catch (e) { body.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-danger">Failed to fetch inventory snapshots.</td></tr>'; }
+    }
+
+    document.getElementById('filterStatus').addEventListener('change', loadStockData);
+    document.addEventListener('DOMContentLoaded', loadStockData);
+</script>
+{% endblock %}

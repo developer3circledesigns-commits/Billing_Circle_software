@@ -1,0 +1,253 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}{{ 'Edit' if mode == 'edit' else 'Add' }} Supplier | Billing Circle{% endblock %}
+
+{% block dashboard_content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="mb-1">{{ 'Edit' if mode == 'edit' else 'New' }} Supplier (Weaver)</h4>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0 small">
+                        <li class="breadcrumb-item"><a href="/dashboard"
+                                class="text-decoration-none text-muted">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="/weavers"
+                                class="text-decoration-none text-muted">Weavers</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">{{ 'Edit' if mode == 'edit' else 'Add' }}
+                        </li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm overflow-hidden">
+            <div class="card-header bg-white border-0 p-0">
+                <ul class="nav nav-tabs nav-fill" id="weaverFormTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active py-3 fw-bold border-0 border-bottom border-3" id="general-tab"
+                            data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab"><i
+                                class="bi bi-info-circle me-2"></i>General</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link py-3 fw-bold border-0 border-bottom border-3" id="financial-tab"
+                            data-bs-toggle="tab" data-bs-target="#financial" type="button" role="tab"><i
+                                class="bi bi-cash-stack me-2"></i>Financial</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link py-3 fw-bold border-0 border-bottom border-3" id="banking-tab"
+                            data-bs-toggle="tab" data-bs-target="#banking" type="button" role="tab"><i
+                                class="bi bi-bank me-2"></i>Banking</button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body p-4">
+                <form id="weaverForm">
+                    <div class="tab-content" id="weaverFormContent">
+                        <!-- General Tab -->
+                        <div class="tab-pane fade show active" id="general" role="tabpanel">
+                            <h6 class="text-muted text-uppercase small fw-bold mb-4">Supplier Identity & Contact</h6>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label required small fw-bold">Supplier Name</label>
+                                    <input type="text" class="form-control" name="weaver_name" required
+                                        placeholder="Legal Name">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Display Name</label>
+                                    <input type="text" class="form-control" name="display_name"
+                                        placeholder="How you identify them">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label required small fw-bold">Primary Contact</label>
+                                    <input type="text" class="form-control" name="contact_number" required
+                                        placeholder="Mobile/Phone">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Email Address</label>
+                                    <input type="email" class="form-control" name="email"
+                                        placeholder="email@supplier.com">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">GSTIN</label>
+                                    <input type="text" class="form-control" name="gstin" placeholder="22AAAAA0000A1Z5">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">PAN Number</label>
+                                    <input type="text" class="form-control" name="pan_number" placeholder="ABCDE1234F">
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label small fw-bold">Registered Address</label>
+                                    <textarea class="form-control" name="address" rows="2"
+                                        placeholder="Complete address..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Financial Tab -->
+                        <div class="tab-pane fade" id="financial" role="tabpanel">
+                            <h6 class="text-muted text-uppercase small fw-bold mb-4">Financial Settings & Defaults</h6>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Opening Balance (₹)</label>
+                                    <input type="number" step="0.01" class="form-control" name="opening_balance"
+                                        value="0.00">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Standard Cost (₹)</label>
+                                    <input type="number" step="0.01" class="form-control" name="cost" value="0.00">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Credit Period (Days)</label>
+                                    <input type="number" class="form-control" name="credit_period_days" value="0">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Payment Terms</label>
+                                    <select class="form-select" name="payment_terms">
+                                        <option value="due_on_receipt">Due on Receipt</option>
+                                        <option value="net_15" selected>Net 15</option>
+                                        <option value="net_30">Net 30</option>
+                                        <option value="net_60">Net 60</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label small fw-bold">Internal Notes</label>
+                                    <textarea class="form-control" name="notes" rows="2"
+                                        placeholder="Special instructions for this weaver..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Banking Tab -->
+                        <div class="tab-pane fade" id="banking" role="tabpanel">
+                            <h6 class="text-muted text-uppercase small fw-bold mb-4">Bank Account Details</h6>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Bank Name</label>
+                                    <input type="text" class="form-control" name="bank_name"
+                                        placeholder="e.g. HDFC Bank">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Account Holder Name</label>
+                                    <input type="text" class="form-control" name="account_name"
+                                        placeholder="Name as per bank">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Account Number</label>
+                                    <input type="text" class="form-control" name="account_number"
+                                        placeholder="000000000000">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">IFSC Code</label>
+                                    <input type="text" class="form-control" name="ifsc_code" placeholder="HDFC0001234">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 border-top pt-4">
+                        <a href="/weavers" class="btn btn-light border px-4">Discard</a>
+                        <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                            <i class="bi bi-check-lg me-2"></i>{{ 'Update' if mode == 'edit' else 'Create' }} Supplier
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const mode = "{{ mode }}";
+    const weaverId = "{{ weaver_id if weaver_id else '' }}";
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        if (mode === 'edit' && weaverId) {
+            try {
+                const response = await axios.get(`${API_URL}/weavers/${weaverId}`);
+                const data = response.data;
+                const form = document.getElementById('weaverForm');
+
+                // Populate all form fields
+                Object.keys(data).forEach(key => {
+                    const field = form.elements[key];
+                    if (field) {
+                        const value = data[key];
+
+                        // Handle different field types
+                        if (field.type === 'checkbox') {
+                            field.checked = value === true;
+                        } else if (field.tagName === 'SELECT') {
+                            // For select elements, set the value if it exists in options
+                            if (value !== null && value !== undefined && value !== '') {
+                                field.value = value;
+                            }
+                        } else if (field.type === 'number') {
+                            // For number inputs, handle null/undefined
+                            field.value = (value !== null && value !== undefined) ? value : '';
+                        } else {
+                            // For text inputs and textareas
+                            field.value = (value !== null && value !== undefined) ? value : '';
+                        }
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error loading weaver data:', error);
+                window.ui.showToast('Failed to fetch supplier details: ' + (error.response?.data?.detail || error.message), 'danger');
+                // Redirect back to list after error
+                setTimeout(() => {
+                    window.location.href = '/weavers';
+                }, 2000);
+            }
+        }
+    });
+
+    document.getElementById('weaverForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+
+        // Clean up data: remove empty strings for optional fields in edit mode
+        if (mode === 'edit') {
+            Object.keys(data).forEach(key => {
+                if (data[key] === '' && key !== 'weaver_name' && key !== 'contact_number') {
+                    delete data[key];
+                }
+            });
+        }
+
+        // Data type conversion
+        if (data.cost !== undefined) data.cost = parseFloat(data.cost) || 0;
+        if (data.opening_balance !== undefined) data.opening_balance = parseFloat(data.opening_balance) || 0;
+        if (data.credit_period_days !== undefined) data.credit_period_days = parseInt(data.credit_period_days) || 0;
+        if (data.tds_percentage !== undefined) data.tds_percentage = parseFloat(data.tds_percentage) || 0;
+        if (data.rating !== undefined) data.rating = parseFloat(data.rating) || 0;
+
+        try {
+            if (mode === 'edit') {
+                await axios.put(`${API_URL}/weavers/${weaverId}`, data);
+                window.ui.showToast('Supplier updated successfully', 'success');
+            } else {
+                await axios.post(`${API_URL}/weavers/`, data);
+                window.ui.showToast('Supplier created successfully', 'success');
+            }
+            setTimeout(() => {
+                window.location.href = '/weavers';
+            }, 500);
+        } catch (error) {
+            console.error('Error saving weaver:', error);
+            window.ui.showToast('Operation failed. ' + (error.response?.data?.detail || 'Please check all fields.'), 'danger');
+        }
+    });
+</script>
+
+<style>
+    .required:after {
+        content: " *";
+        color: red;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,25 @@
+Traceback (most recent call last):
+  File "C:\billing_software\test_pydantic_debug_4.py", line 18, in <module>
+    class Model3(BaseModel):
+        f: "Optional[str]" = None
+  File "C:\Users\Admin\AppData\Roaming\Python\Python314\site-packages\pydantic\main.py", line 221, in __new__
+    inferred = ModelField.infer(
+        name=var_name,
+    ...<3 lines>...
+        config=config,
+    )
+  File "C:\Users\Admin\AppData\Roaming\Python\Python314\site-packages\pydantic\fields.py", line 506, in infer
+    return cls(
+        name=name,
+    ...<7 lines>...
+        field_info=field_info,
+    )
+  File "C:\Users\Admin\AppData\Roaming\Python\Python314\site-packages\pydantic\fields.py", line 436, in __init__
+    self.prepare()
+    ~~~~~~~~~~~~^^
+  File "C:\Users\Admin\AppData\Roaming\Python\Python314\site-packages\pydantic\fields.py", line 546, in prepare
+    self._set_default_and_type()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Admin\AppData\Roaming\Python\Python314\site-packages\pydantic\fields.py", line 578, in _set_default_and_type
+    raise errors_.ConfigError(f'unable to infer type for attribute "{self.name}"')
+pydantic.errors.ConfigError: unable to infer type for attribute "f"

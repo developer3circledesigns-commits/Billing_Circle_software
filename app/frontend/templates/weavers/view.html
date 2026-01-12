@@ -1,0 +1,175 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}Supplier Profile - {{ weaver_id }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-12 col-md">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 small">
+                <li class="breadcrumb-item"><a href="/weavers" class="text-decoration-none">Weaver Master</a></li>
+                <li class="breadcrumb-item active" id="breadcrumbName">Supplier Profile</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-0" id="profileHeading">Loading Supplier...</h1>
+    </div>
+    <div class="col-12 col-md-auto mt-3 mt-md-0">
+        <div class="btn-group shadow-sm">
+            <a href="/weavers/edit/{{ weaver_id }}" class="btn btn-white border px-3">
+                <i class="bi bi-pencil me-2"></i>Edit
+            </a>
+            <button class="btn btn-white border px-3 text-danger">
+                <i class="bi bi-trash me-2"></i>Deactivate
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Financial Snapshot Card -->
+    <div class="col-12 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-4">
+                <h6 class="text-muted text-uppercase small fw-bold mb-4">Financial Snapshot</h6>
+                <div class="mb-4">
+                    <label class="text-muted small d-block mb-1">Current Outstanding</label>
+                    <h2 class="fw-bold text-danger mb-0" id="outstandingBalance">₹ 0.00</h2>
+                </div>
+                <div class="mb-4">
+                    <label class="text-muted small d-block mb-1">Standard Cost Rate</label>
+                    <h4 class="fw-bold mb-0" id="standardCost">₹ 0.00</h4>
+                </div>
+                <div class="p-3 bg-light rounded-3 border border-dashed text-center">
+                    <div class="row g-0">
+                        <div class="col-6 border-end">
+                            <label class="text-muted smaller d-block">Credit Period</label>
+                            <span class="fw-bold" id="creditPeriod">0 Days</span>
+                        </div>
+                        <div class="col-6">
+                            <label class="text-muted smaller d-block">Terms</label>
+                            <span class="fw-bold text-uppercase" id="paymentTerms">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact & Identity Details -->
+    <div class="col-12 col-lg-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h6 class="text-muted text-uppercase small fw-bold mb-0">Business Identity & Contact</h6>
+                    <span class="badge bg-success-subtle text-success border border-success-soft rounded-pill px-3"
+                        id="supplierStatus">ACTIVE</span>
+                </div>
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="text-muted small d-block">GSTIN</label>
+                        <span class="fw-bold" id="gstinText">Not Provided</span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small d-block">PAN Number</label>
+                        <span class="fw-bold" id="panText">Not Provided</span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small d-block">Email Address</label>
+                        <span class="fw-bold" id="emailText">-</span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small d-block">Contact Number</label>
+                        <span class="fw-bold" id="phoneText">-</span>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="text-muted small d-block">Business Address</label>
+                        <p class="mb-0 fw-semibold" id="addressText">No address recorded.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Banking Details Card -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h6 class="text-muted text-uppercase small fw-bold mb-4">Default Banking Information</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-borderless align-middle mb-0">
+                        <tr>
+                            <td class="text-muted py-2" width="150">Bank Name</td>
+                            <td class="fw-bold px-3 py-2" id="bankName">-</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted py-2">Account Name</td>
+                            <td class="fw-bold px-3 py-2" id="accountName">-</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted py-2">Account Number</td>
+                            <td class="fw-bold px-3 py-2" id="accountNumber">-</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted py-2">IFSC Code</td>
+                            <td class="fw-bold px-3 py-2" id="ifscCode">-</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notes & Timeline placeholder -->
+    <div class="col-12">
+        <div class="card border-0 shadow-sm mt-2">
+            <div class="card-body p-4">
+                <h6 class="text-muted text-uppercase small fw-bold mb-3">Internal Notes</h6>
+                <p class="text-muted mb-0 italic" id="notesText">No internal notes available for this supplier.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const weaverId = "{{ weaver_id }}";
+
+    async function loadProfile() {
+        try {
+            const resp = await axios.get(`${API_URL}/weavers/${weaverId}`);
+            const w = resp.data;
+
+            // Header
+            document.getElementById('profileHeading').textContent = w.weaver_name;
+            document.getElementById('breadcrumbName').textContent = w.weaver_code;
+            document.getElementById('supplierStatus').textContent = w.status.toUpperCase();
+            document.getElementById('supplierStatus').className = `badge ${w.status === 'active' ? 'bg-success-subtle text-success border border-success-soft' : 'bg-danger-subtle text-danger border border-danger-soft'} rounded-pill px-3`;
+
+            // Financials
+            document.getElementById('outstandingBalance').textContent = `₹ ${(w.current_balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+            document.getElementById('standardCost').textContent = `₹ ${(w.cost || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+            document.getElementById('creditPeriod').textContent = `${w.credit_period_days || 0} Days`;
+            document.getElementById('paymentTerms').textContent = (w.payment_terms || 'net_15').replace('_', ' ');
+
+            // Identity
+            document.getElementById('gstinText').textContent = w.gstin || 'No GSTIN registered';
+            document.getElementById('panText').textContent = w.pan_number || 'No PAN registered';
+            document.getElementById('emailText').textContent = w.email || 'No email provided';
+            document.getElementById('phoneText').textContent = w.contact_number;
+            document.getElementById('addressText').textContent = w.address || 'No address recorded.';
+
+            // Banking
+            document.getElementById('bankName').textContent = w.bank_name || '-';
+            document.getElementById('accountName').textContent = w.account_name || '-';
+            document.getElementById('accountNumber').textContent = w.account_number || '-';
+            document.getElementById('ifscCode').textContent = w.ifsc_code || '-';
+
+            // Notes
+            document.getElementById('notesText').textContent = w.notes || 'No internal notes available for this supplier.';
+
+        } catch (e) {
+            console.error(e);
+            window.ui.showToast('Could not fetch supplier profile data.', 'danger');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadProfile);
+</script>
+{% endblock %}

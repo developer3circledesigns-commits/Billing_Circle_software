@@ -1,0 +1,125 @@
+{% extends "layouts/dashboard.html" %}
+
+{% block title %}Vendor Payments | Billing Circle{% endblock %}
+
+{% block dashboard_content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-12 col-md">
+        <h1 class="h3 fw-bold mb-1">Vendor Payments</h1>
+        <p class="text-muted mb-0">Track payments made to suppliers</p>
+    </div>
+    <div class="col-12 col-md-auto mt-3 mt-md-0">
+        <a href="/vendor-payments/add" class="btn btn-primary px-4">
+            <i class="bi bi-plus-lg me-2"></i>New Payment
+        </a>
+    </div>
+</div>
+
+<!-- Table Card -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white">
+        <div class="row g-3 align-items-center">
+            <div class="col-12 col-md-6 col-lg-6">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control" id="paymentSearch" placeholder="Search payments...">
+                </div>
+            </div>
+            <div class="col-12 col-md-auto ms-auto">
+                <button class="btn btn-outline-primary" id="refreshTable">
+                    <i class="bi bi-arrow-clockwise me-2"></i>Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Payment #</th>
+                        <th>Date</th>
+                        <th>Supplier</th>
+                        <th>Bill Reference</th>
+                        <th class="text-end">Amount</th>
+                        <th>Payment Mode</th>
+                        <th>Reference</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="paymentTableBody">
+                    <!-- Data injected here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const TableBody = document.getElementById('paymentTableBody');
+
+    async function loadVendorPayments(weaverId = '') {
+        TableBody.innerHTML = '<tr><td colspan="6" class="text-center py-5"><div class="spinner-border text-primary spinner-border-sm"></div></td></tr>';
+        try {
+            const params = new URLSearchParams();
+            if (weaverId) params.append('weaver_id', weaverId);
+
+            const resp = await axios.get(`${API_URL}/vendor-payments/?${params.toString()}`);
+            const payments = resp.data;
+
+            if (payments.length === 0) {
+                TableBody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">No payments found.</td></tr>';
+                return;
+            }
+
+            TableBody.innerHTML = payments.map(p => `
+                <tr class="align-middle">
+                    <td class="ps-4">
+                        <div class="fw-bold text-primary">${p.payment_number}</div>
+                    </td>
+                    <td>${new Date(p.payment_date).toLocaleDateString()}</td>
+                    <td>
+                        <div class="fw-bold">${p.weaver_name}</div>
+                    </td>
+                    <td class="text-end fw-bold text-success">₹ ${parseFloat(p.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                    <td>
+                        <span class="badge bg-light text-dark text-capitalize border">
+                            ${p.payment_mode.replace('_', ' ')}
+                        </span>
+                    </td>
+                    <td class="text-end pe-4">
+                        <div class="btn-group shadow-sm">
+                            <a href="/vendor-payments/view/${p.payment_id}" class="btn btn-white btn-sm border" title="View Details">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <button class="btn btn-white btn-sm border text-danger" title="Delete" onclick="deletePayment('${p.payment_id}', '${p.payment_number}')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        } catch (e) {
+            console.error(e);
+            TableBody.innerHTML = '<tr><td colspan="8" class="text-center py-5 text-danger">Failed to load vendor payments.</td></tr>';
+        }
+    }
+
+    async function deletePayment(paymentId, number) {
+        window.ui.confirmDelete({
+            title: 'Delete Payment',
+            message: `Are you sure you want to delete Payment ${number}? This will revert the bill and weaver balances.`,
+            onConfirm: async () => {
+                await axios.delete(`${API_URL}/vendor-payments/${paymentId}`);
+                window.ui.showToast('Payment record deleted', 'success');
+                loadVendorPayments();
+            }
+        });
+    }
+
+    document.getElementById('refreshTable').addEventListener('click', () => loadVendorPayments());
+    document.addEventListener('DOMContentLoaded', () => loadVendorPayments());
+</script>
+{% endblock %}
