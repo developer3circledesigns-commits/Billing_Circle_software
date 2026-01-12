@@ -29,6 +29,12 @@ document.addEventListener('DOMContentLoaded', () => {
         sidebar?.classList.add('collapsed');
     }
 
+    const closeSidebarMobile = () => {
+        sidebar?.classList.remove('mobile-open');
+        sidebarOverlay?.classList.remove('active');
+        document.body.style.overflow = '';
+    };
+
     // 2. Mobile Sidebar Logic
     if (mobileSidebarToggle) {
         mobileSidebarToggle.addEventListener('click', () => {
@@ -38,12 +44,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const sidebarCloseMobile = document.getElementById('sidebarCloseMobile');
+    if (sidebarCloseMobile) {
+        sidebarCloseMobile.addEventListener('click', closeSidebarMobile);
+    }
+
     if (sidebarOverlay) {
-        sidebarOverlay.addEventListener('click', () => {
-            sidebar?.classList.remove('mobile-open');
-            sidebarOverlay.classList.remove('active');
-            document.body.style.overflow = '';
-        });
+        sidebarOverlay.addEventListener('click', closeSidebarMobile);
     }
 
     // 3. Theme Logic
