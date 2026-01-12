@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.venv/
+
+# Environment Variables
+.env
+
+# Logs
+*.log
+error_log.txt
+counts.txt
+test_results.txt
+verification_results.txt
+users_list.txt
+
+# Databases (if any local sqlite or temp files)
+*.db
+*.sqlite3
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

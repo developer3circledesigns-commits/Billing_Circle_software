@@ -274,7 +274,6 @@
         position: sticky;
         top: 0;
         z-index: 100;
-        backdrop-filter: blur(10px);
         background: rgba(255, 255, 255, 0.95);
     }
 
@@ -311,7 +310,6 @@
         text-decoration: none;
         font-size: 0.875rem;
         font-weight: 500;
-        transition: color 0.2s;
     }
 
     .breadcrumb-back:hover {
@@ -349,7 +347,6 @@
         font-size: 0.875rem;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s;
         text-decoration: none;
         border: 1px solid transparent;
     }
@@ -375,7 +372,6 @@
     .btn-primary:hover {
         background: var(--primary-dark);
         border-color: var(--primary-dark);
-        transform: translateY(-1px);
         box-shadow: var(--shadow-md);
     }
 
@@ -431,7 +427,6 @@
         border-radius: var(--radius);
         box-shadow: var(--shadow-md);
         overflow: hidden;
-        transition: box-shadow 0.2s;
     }
 
     .form-card:hover {
@@ -510,7 +505,6 @@
         font-size: 0.875rem;
         color: var(--dark);
         background: white;
-        transition: all 0.2s;
     }
 
     .form-control:focus {
@@ -661,7 +655,6 @@
 
     .items-table tbody tr {
         border-bottom: 1px solid var(--border-light);
-        transition: background 0.2s;
     }
 
     .items-table tbody tr:hover {
@@ -734,7 +727,6 @@
         background: white;
         color: var(--secondary);
         cursor: pointer;
-        transition: all 0.2s;
     }
 
     .delete-btn:hover {
@@ -783,20 +775,7 @@
         color: var(--secondary);
     }
 
-    .spinner {
-        width: 32px;
-        height: 32px;
-        border: 3px solid var(--primary-light);
-        border-top-color: var(--primary);
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-        to {
-            transform: rotate(360deg);
-        }
-    }
+    /* spin keyframes removed */
 
     /* Summary Card */
     .sticky-card {
@@ -943,7 +922,6 @@
         border-radius: var(--radius-sm);
         background: white;
         cursor: pointer;
-        transition: all 0.2s;
     }
 
     .item-card:hover {
@@ -1018,20 +996,9 @@
         border-radius: var(--radius-sm);
         box-shadow: var(--shadow-lg);
         max-width: 350px;
-        animation: toastSlide 0.3s ease;
     }
 
-    @keyframes toastSlide {
-        from {
-            opacity: 0;
-            transform: translateX(100%);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateX(0);
-        }
-    }
+    /* toastSlide keyframes removed */
 
     .toast-body {
         padding: 1rem;

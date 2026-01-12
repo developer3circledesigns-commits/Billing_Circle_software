@@ -388,7 +388,6 @@
         text-decoration: none;
         font-size: 0.875rem;
         font-weight: 500;
-        transition: color 0.2s;
     }
 
     .breadcrumb-back:hover {
@@ -444,7 +443,6 @@
         font-size: 0.875rem;
         font-weight: 500;
         cursor: pointer;
-        transition: all 0.2s;
         text-decoration: none;
         position: relative;
         z-index: 1;
@@ -454,7 +452,6 @@
         background: var(--light);
         border-color: var(--primary);
         color: var(--primary);
-        transform: translateY(-1px);
     }
 
     .btn-action i {
@@ -511,20 +508,9 @@
 
     .dropdown-container .dropdown-menu.show {
         display: block;
-        animation: dropdownSlide 0.2s ease;
     }
 
-    @keyframes dropdownSlide {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
+    /* dropdownSlide keyframes removed */
 
     .btn-more {
         padding: 0.625rem;
@@ -546,7 +532,6 @@
         border-radius: 6px;
         color: var(--dark);
         text-decoration: none;
-        transition: all 0.2s;
         font-size: 0.875rem;
         cursor: pointer;
     }
@@ -578,14 +563,12 @@
         font-size: 0.875rem;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s;
         position: relative;
         z-index: 1;
     }
 
     .btn-convert:hover {
         background: var(--primary-dark);
-        transform: translateY(-1px);
         box-shadow: var(--shadow-md);
     }
 
@@ -854,7 +837,6 @@
 
     .items-table tbody tr {
         border-bottom: 1px solid var(--border-light);
-        transition: background 0.2s;
     }
 
     .items-table tbody tr:hover {
@@ -913,20 +895,7 @@
         color: var(--secondary);
     }
 
-    .spinner {
-        width: 32px;
-        height: 32px;
-        border: 3px solid var(--primary-light);
-        border-top-color: var(--primary);
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-        to {
-            transform: rotate(360deg);
-        }
-    }
+    /* spin keyframes removed */
 
     /* Totals Section */
     .totals-section {
@@ -1140,7 +1109,6 @@
         align-items: center;
         gap: 1rem;
         cursor: pointer;
-        transition: all 0.2s;
     }
 
     .btn-native-share:hover {
@@ -1218,11 +1186,9 @@
         border-radius: var(--radius-sm);
         background: white;
         cursor: pointer;
-        transition: all 0.2s;
     }
 
     .social-share-btn:hover {
-        transform: translateY(-2px);
         box-shadow: var(--shadow-md);
     }
 
@@ -1323,7 +1289,6 @@
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        transition: background 0.2s;
     }
 
     .btn-copy:hover {
@@ -1357,7 +1322,6 @@
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
-        transition: all 0.2s;
     }
 
     .btn-qr-toggle:hover {
@@ -1401,22 +1365,11 @@
         border-radius: var(--radius-sm);
         box-shadow: var(--shadow-lg);
         max-width: 350px;
-        animation: toastSlide 0.3s ease;
         position: relative;
         z-index: 1081;
     }
 
-    @keyframes toastSlide {
-        from {
-            opacity: 0;
-            transform: translateX(100%);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateX(0);
-        }
-    }
+    /* toastSlide keyframes removed */
 
     .toast-body {
         padding: 1rem;
@@ -1663,20 +1616,11 @@
             width: 100% !important;
             margin: 0 !important;
             border-radius: var(--radius) var(--radius) 0 0 !important;
-            animation: slideUp 0.3s ease !important;
             max-height: 80vh;
             overflow-y: auto;
         }
 
-        @keyframes slideUp {
-            from {
-                transform: translateY(100%);
-            }
-
-            to {
-                transform: translateY(0);
-            }
-        }
+        /* slideUp keyframes removed */
     }
 
     /* Clear backdrop fix */

@@ -54,7 +54,6 @@
         border: 1px solid var(--invoice-border);
         border-radius: var(--invoice-radius);
         box-shadow: var(--invoice-shadow);
-        transition: box-shadow 0.2s ease;
         margin-bottom: 1.5rem;
         overflow: hidden;
     }
@@ -152,7 +151,6 @@
         padding: 0.5rem;
         width: 100%;
         font-size: 0.875rem;
-        transition: all 0.2s ease;
     }
 
     .item-select:focus {
@@ -168,7 +166,6 @@
         width: 100%;
         font-size: 0.875rem;
         text-align: right;
-        transition: all 0.2s ease;
     }
 
     .item-input:focus {
@@ -214,7 +211,6 @@
         border: 1px solid var(--invoice-border);
         background: white;
         color: var(--invoice-gray);
-        transition: all 0.2s ease;
         cursor: pointer;
     }
 
@@ -238,7 +234,6 @@
         padding: 1.25rem;
         margin-bottom: 1rem;
         position: relative;
-        transition: all 0.2s ease;
     }
 
     .mobile-item-card:hover {
@@ -341,7 +336,6 @@
         color: var(--invoice-gray);
         font-weight: 500;
         cursor: pointer;
-        transition: all 0.2s ease;
         text-align: center;
         display: flex;
         flex-direction: column;
@@ -350,7 +344,6 @@
     }
 
     .payment-status-btn:hover {
-        transform: translateY(-2px);
         box-shadow: var(--invoice-shadow);
     }
 
@@ -399,19 +392,15 @@
         align-items: center;
         justify-content: center;
         gap: 0.75rem;
-        transition: all 0.3s ease;
         position: relative;
         overflow: hidden;
     }
 
     .submit-btn:hover {
-        transform: translateY(-2px);
         box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4);
     }
 
-    .submit-btn:active {
-        transform: translateY(0);
-    }
+    /* .submit-btn:active removed */
 
     .submit-btn::before {
         content: '';
@@ -421,8 +410,9 @@
         width: 100%;
         height: 100%;
         background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-        transition: 0.5s;
+        /* transition removed */
     }
+
 
     .submit-btn:hover::before {
         left: 100%;
@@ -454,7 +444,6 @@
         font-size: 0.875rem;
         resize: vertical;
         min-height: 120px;
-        transition: all 0.2s ease;
     }
 
     .notes-textarea:focus {
@@ -542,37 +531,13 @@
         }
     }
 
-    /* Animations */
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
+    /* Animations removed */
     .fade-in {
-        animation: fadeIn 0.3s ease forwards;
-    }
-
-    @keyframes slideIn {
-        from {
-            transform: translateX(-20px);
-            opacity: 0;
-        }
-
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
+        opacity: 1;
     }
 
     .slide-in {
-        animation: slideIn 0.3s ease forwards;
+        opacity: 1;
     }
 
     /* Loading States */

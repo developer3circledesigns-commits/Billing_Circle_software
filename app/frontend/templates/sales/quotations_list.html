@@ -224,20 +224,9 @@
     /* Reset & Base */
     .quotations-page {
         padding: 0;
-        animation: fadeIn 0.3s ease;
     }
 
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
+    /* fadeIn keyframes removed */
 
     /* Page Header */
     .page-header {
@@ -262,7 +251,6 @@
         padding: 0.625rem 1.25rem;
         border-radius: 8px;
         font-weight: 500;
-        transition: all 0.2s ease;
         border: 1px solid transparent;
     }
 
@@ -274,7 +262,6 @@
     .btn-primary:hover {
         background: #3a56d4;
         border-color: #3a56d4;
-        transform: translateY(-1px);
         box-shadow: var(--shadow);
     }
 
@@ -307,7 +294,6 @@
         border-radius: 12px;
         background: white;
         box-shadow: var(--shadow);
-        transition: box-shadow 0.2s ease;
     }
 
     .card:hover {
@@ -338,7 +324,6 @@
         border: 1px solid var(--border);
         border-radius: 8px;
         background: white;
-        transition: all 0.2s ease;
     }
 
     .search-input:focus {
@@ -375,20 +360,9 @@
         padding: 0.5rem;
         min-width: 180px;
         margin-top: 0.5rem !important;
-        animation: dropdownSlide 0.2s ease;
     }
 
-    @keyframes dropdownSlide {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
+    /* dropdownSlide keyframes removed */
 
     .dropdown-header {
         font-size: 0.75rem;
@@ -405,7 +379,6 @@
         color: var(--dark);
         display: flex;
         align-items: center;
-        transition: all 0.2s ease;
         margin: 0.125rem 0;
     }
 
@@ -477,7 +450,6 @@
     }
 
     .table tbody tr {
-        transition: all 0.2s ease;
         cursor: pointer;
     }
 
@@ -582,20 +554,7 @@
         justify-content: center;
     }
 
-    .spinner {
-        width: 48px;
-        height: 48px;
-        border: 3px solid var(--primary-light);
-        border-top-color: var(--primary);
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-        to {
-            transform: rotate(360deg);
-        }
-    }
+    /* spin keyframes removed */
 
     .py-8 {
         padding-top: 3rem !important;
@@ -648,14 +607,12 @@
         font-size: 0.875rem;
         min-width: 38px;
         text-align: center;
-        transition: all 0.2s ease;
     }
 
     .page-link:hover {
         background: var(--light);
         border-color: #cbd5e1;
         color: var(--dark);
-        transform: translateY(-1px);
     }
 
     .page-item.active .page-link {
@@ -675,7 +632,6 @@
     .mobile-card {
         padding: 1.25rem;
         border-bottom: 1px solid var(--border);
-        transition: all 0.2s ease;
     }
 
     .mobile-card:hover {

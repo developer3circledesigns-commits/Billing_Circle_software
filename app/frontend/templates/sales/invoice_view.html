@@ -105,14 +105,12 @@
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        transition: all 0.2s ease;
         border: 1px solid var(--border-color);
         background: white;
         color: var(--dark-color);
     }
 
     .action-btn:hover {
-        transform: translateY(-1px);
         box-shadow: var(--card-shadow);
         border-color: var(--primary-color);
         color: var(--primary-color);
@@ -193,7 +191,6 @@
 
     /* Invoice Header */
     .invoice-header {
-        background: linear-gradient(135deg, var(--primary-color) 0%, #667eea 100%);
         color: white;
         padding: 30px;
         position: relative;
@@ -634,26 +631,10 @@
         height: 100%;
         background: var(--success-color);
         border-radius: 3px;
-        transition: width 0.3s ease;
     }
 
     /* Loading States */
-    .loading-skeleton {
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-        background-size: 200% 100%;
-        animation: loading 1.5s infinite;
-        border-radius: var(--radius-sm);
-    }
-
-    @keyframes loading {
-        0% {
-            background-position: 200% 0;
-        }
-
-        100% {
-            background-position: -200% 0;
-        }
-    }
+    /* loading animation removed */
 
     /* Mobile Responsive */
     @media (max-width: 768px) {
@@ -706,8 +687,6 @@
         }
 
         .dropdown-menu {
-            position: fixed !important;
-            top: 50% !important;
             left: 50% !important;
             transform: translate(-50%, -50%) !important;
             width: 90% !important;

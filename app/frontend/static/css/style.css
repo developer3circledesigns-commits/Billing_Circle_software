@@ -28,8 +28,6 @@
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
     --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
-    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-slow: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
@@ -43,8 +41,6 @@
 
 .modal-backdrop.show {
     opacity: 0.5;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
 }
 
 
@@ -122,9 +118,7 @@ small {
 
 /* Glassmorphism Utility */
 .glass {
-    background: rgba(255, 255, 255, 0.72);
-    backdrop-filter: blur(12px) saturate(180%);
-    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    background: rgba(255, 255, 255, 0.9);
     border: 1px solid rgba(255, 255, 255, 0.18);
     box-shadow: var(--shadow-lg);
 }
@@ -139,7 +133,6 @@ small {
     top: 0;
     left: 0;
     z-index: 1040;
-    transition: var(--transition-slow);
     display: flex;
     flex-direction: column;
     overflow-y: auto;
@@ -161,7 +154,6 @@ small {
     display: flex;
     align-items: center;
     gap: 1rem;
-    transition: var(--transition);
 }
 
 .logo-icon {
@@ -213,7 +205,6 @@ small {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: var(--transition);
     flex-shrink: 0;
 }
 
@@ -249,7 +240,6 @@ small {
     /* padding: 0.5rem 1.25rem; */
     color: var(--text-secondary);
     text-decoration: none;
-    transition: var(--transition);
     position: relative;
     border-radius: var(--radius-sm);
     margin: 0.125rem 0.75rem;
@@ -266,7 +256,6 @@ small {
     height: 0;
     background: linear-gradient(to bottom, var(--accent), var(--accent-light));
     border-radius: 0 2px 2px 0;
-    transition: var(--transition);
 }
 
 .nav-icon {
@@ -279,7 +268,6 @@ small {
     background: rgba(59, 130, 246, 0.05);
     color: var(--accent);
     flex-shrink: 0;
-    transition: var(--transition);
     font-size: 0.9rem;
 }
 
@@ -295,7 +283,6 @@ small {
 .nav-link:hover {
     background-color: rgba(59, 130, 246, 0.05);
     color: var(--accent);
-    transform: translateX(4px);
 }
 
 .nav-link:hover::before {
@@ -418,12 +405,10 @@ small {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(15, 23, 42, 0.4);
-    backdrop-filter: blur(4px);
+    background: rgba(15, 23, 42, 0.6);
     z-index: 1030;
     opacity: 0;
     visibility: hidden;
-    transition: var(--transition);
 }
 
 .sidebar-overlay.active {
@@ -435,7 +420,6 @@ small {
 #main-content {
     margin-left: var(--sidebar-width);
     min-height: 100vh;
-    transition: var(--transition-slow);
     padding-top: var(--navbar-height);
 }
 
@@ -446,9 +430,7 @@ small {
 /* Navbar */
 .navbar {
     height: var(--navbar-height);
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(12px) saturate(180%);
-    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    background: rgba(255, 255, 255, 0.95);
     /* padding: 0 1.5rem; */
     border-bottom: 1px solid var(--border-color);
     position: fixed;
@@ -456,7 +438,6 @@ small {
     right: 0;
     left: var(--sidebar-width);
     z-index: 999;
-    transition: var(--transition-slow);
     display: flex;
     align-items: center;
 }
@@ -484,13 +465,11 @@ small {
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-md);
     background-color: var(--bg-card);
-    transition: var(--transition);
     overflow: hidden;
 }
 
 .card:hover {
     box-shadow: var(--shadow-xl);
-    transform: translateY(-2px);
 }
 
 .card-header {
@@ -535,12 +514,9 @@ small {
     justify-content: center;
     background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
     margin-bottom: 1rem;
-    transition: var(--transition);
 }
 
-.kpi-card:hover .icon-box {
-    transform: scale(1.1) rotate(5deg);
-}
+
 
 .kpi-card .icon-box i {
     font-size: 1.5rem;
@@ -571,7 +547,6 @@ small {
     border-radius: var(--radius-md);
     font-size: 0.9rem;
     background-color: white;
-    transition: var(--transition);
     width: 100%;
 }
 
@@ -653,7 +628,6 @@ small {
 }
 
 .table tbody tr {
-    transition: var(--transition);
     border-bottom: 1px solid var(--border-light);
 }
 
@@ -677,7 +651,6 @@ small {
     padding: 0.5rem 1.25rem;
     font-weight: 600;
     border-radius: var(--radius-md);
-    transition: var(--transition);
     border: 2px solid transparent;
     cursor: pointer;
     display: inline-flex;
@@ -742,7 +715,6 @@ small {
     white-space: nowrap;
     vertical-align: baseline;
     border-radius: 50rem;
-    transition: var(--transition);
 }
 
 .badge-primary {
@@ -1196,22 +1168,7 @@ small {
     height: 100% !important;
 }
 
-/* Animation */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
 
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.fade-in {
-    animation: fadeIn 0.5s ease-out;
-}
 
 /* Scrollbar Styling */
 ::-webkit-scrollbar {
@@ -1227,7 +1184,6 @@ small {
 ::-webkit-scrollbar-thumb {
     background: var(--accent-light);
     border-radius: 4px;
-    transition: var(--transition);
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -1332,8 +1288,7 @@ small {
     padding: 2.5rem;
     border-radius: 1.5rem;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(20px);
+    background: rgba(255, 255, 255, 0.15);
     color: white;
 }
 
@@ -1386,13 +1341,8 @@ small {
     border-color: rgba(59, 130, 246, 0.1) !important;
 }
 
-/* Category specific styles */
-.kpi-card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
+/* .kpi-card transitions removed */
 .kpi-card:hover {
-    transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
 }
 
@@ -1405,10 +1355,6 @@ small {
     justify-content: center;
     font-size: 1.25rem;
     margin-bottom: 1rem;
-}
-
-.table-hover tbody tr {
-    transition: background-color 0.15s ease;
 }
 
 .table-hover tbody tr:hover {
@@ -1433,21 +1379,9 @@ small {
     border-bottom-left-radius: 0 !important;
 }
 
-/* Modal animations */
+/* Modal animations removed */
 .modal-content {
-    animation: modalSlideIn 0.3s ease-out;
-}
-
-@keyframes modalSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    opacity: 1;
 }
 
 /* Loading spinner */
